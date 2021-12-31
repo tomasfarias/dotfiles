@@ -1,0 +1,8 @@
+[user]
+	email = tomas@tomasfarias.dev
+	name = Tomás Farías Santana
+	signingkey = 1C1B69EFD234D24B5600D0A777942905FCDABBD3
+[commit]
+	gpgsign = true
+[init]
+	defaultBranch = master
