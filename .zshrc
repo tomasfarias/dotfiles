@@ -15,14 +15,8 @@ compinit
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/zsh-completions/zsh-completions.plugin.zsh
 source ~/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source ~/.zsh/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source ~/.zsh/zsh-autoenv/autoenv.zsh
 source ~/.zsh/sudo/sudo.plugin.zsh
-
-# Autocomplete configuration
-zstyle ':autocomplete:*' min-delay 1.0
-zstyle ':autocomplete:*' min-input 2
-
 
 # Set PATH so it includes user's private ~/.local/bin if it exists
 if [ -d "$HOME/.local/bin" ] ; then
