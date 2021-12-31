@@ -39,6 +39,7 @@ export PATH="$HOME/.rustup:$PATH"
 
 # Go paths
 export PATH="/usr/local/go/bin:$PATH"
+export GOPATH="$HOME/.go"
 
 # PyENV settings
 export PYENV_ROOT="$HOME/.pyenv"
