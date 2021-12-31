@@ -1,0 +1,568 @@
+# -*- mode: org; coding: utf-8; -*-
+#+ TITLE: My EMACS configuration
+#+ AUTHOR: Tomás Farías Santana
+
+* General settings
+
+Enable syntax-highlighting for all buffers:
+#+BEGIN_SRC emacs-lisp
+  (global-font-lock-mode t)
+#+END_SRC
+
+Ensure environment variables (like PATH) are loaded from SHELL:
+#+BEGIN_SRC emacs-lisp
+  (use-package exec-path-from-shell)
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
+  (when (daemonp)
+    (exec-path-from-shell-initialize))
+#+END_SRC
+
+Disable many things:
+#+BEGIN_SRC emacs-lisp
+  (when (functionp 'menu-bar-mode)
+    (menu-bar-mode -1))
+  (when (functionp 'set-scroll-bar-mode)
+    (set-scroll-bar-mode 'nil))
+  (when (functionp 'mouse-wheel-mode)
+    (mouse-wheel-mode -1))
+  (when (functionp 'tooltip-mode)
+    (tooltip-mode -1))
+  (when (functionp 'tool-bar-mode)
+    (tool-bar-mode -1))
+  (when (functionp 'blink-cursor-mode)
+    (blink-cursor-mode -1))
+
+  (setq inhibit-startup-message t
+        initial-major-mode 'fundamental-mode)
+#+END_SRC
+
+Backup files in system's temp directory:
+#+BEGIN_SRC emacs-lisp
+  (setq backup-directory-alist
+        `((".*" . ,temporary-file-directory)))
+  (setq auto-save-file-name-transforms
+        `((".*" ,temporary-file-directory t)))
+#+END_SRC
+
+Shorter yes/no:
+#+BEGIN_SRC emacs-lisp
+  (defalias 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+Ensure UTF-8 everywhere:
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (setq default-buffer-file-coding-system 'utf-8)
+#+END_SRC
+
+* Aesthetics
+
+Set up gruvbox theme:
+#+BEGIN_SRC emacs-lisp
+  (use-package gruvbox-theme
+    :config (load-theme 'gruvbox-dark-hard t))
+#+END_SRC
+
+Doom-modeline:
+#+BEGIN_SRC emacs-lisp
+  (use-package all-the-icons)
+  (use-package doom-modeline
+    :init (doom-modeline-mode 1))
+#+END_SRC
+
+Ensure line and column numbers:
+#+BEGIN_SRC emacs-lisp
+  (line-number-mode 1)
+  (column-number-mode 1)
+#+END_SRC
+
+Hide the mouse while typing:
+#+BEGIN_SRC emacs-lisp
+  (setq make-pointer-invisible t)
+#+END_SRC
+
+By default, do not indent with tabs:
+#+BEGIN_SRC emacs-lisp
+  (setq-default indent-tabs-mode nil)
+#+END_SRC
+
+Attempt to set default font:
+#+BEGIN_SRC emacs-lisp
+  (when (member "Hack-Regular" (font-family-list))
+    (set-frame-font "Hack-Regular-13:Regular" t t))
+#+END_SRC
+
+Display line numbers everywhere:
+#+BEGIN_SRC emacs-lisp
+  (global-display-line-numbers-mode)
+#+END_SRC
+
+Customize my EMACS Dashboard:
+#+BEGIN_SRC emacs-lisp
+  (use-package page-break-lines)
+
+  (use-package dashboard
+    :config (dashboard-setup-startup-hook)
+    (setq dashboard-startup-banner 'logo)
+    (setq dashboard-banner-logo-title "Get to work!")
+    (setq dashboard-set-heading-icons t)
+    (setq dashboard-set-file-icons t)
+    (setq dashboard-set-init-info t)
+    (setq dashboard-projects-backend 'projectile)
+    (setq dashboard-items '((recents  . 5)
+                            (bookmarks . 5)
+                            (projects . 5)
+                            (agenda . 5)
+                            (registers . 5))))
+#+END_SRC
+
+* Productivity modes
+
+Magit:
+#+BEGIN_SRC emacs-lisp
+  (use-package magit
+    :config (global-set-key (kbd "C-c g") 'magit-file-dispatch))
+#+END_SRC
+
+Projectile:
+#+BEGIN_SRC emacs-lisp
+   (use-package projectile
+    :diminish projectile-mode
+    :init
+    (setq projectile-keymap-prefix (kbd "C-c p"))
+    :config
+    (projectile-global-mode))
+#+END_SRC
+
+Treemacs mode for file and project exploring:
+#+BEGIN_SRC emacs-lisp
+  (use-package treemacs
+    :config
+    (progn
+      (treemacs-follow-mode t)
+      (treemacs-filewatch-mode t)
+      (treemacs-fringe-indicator-mode 'always)
+      (pcase (cons (not (null (executable-find "git")))
+                   (not (null treemacs-python-executable)))
+        (`(t . t)
+         (treemacs-git-mode 'deferred))
+        (`(t . _)
+         (treemacs-git-mode 'simple))))
+    :bind (:map global-map
+                ("<f8>" . treemacs)))
+
+  (use-package treemacs-magit
+    :after (treemacs magit))
+
+  (use-package treemacs-projectile
+    :after (treemacs projectile))
+#+END_SRC
+
+Undo-tree with undo and redo bindings:
+#+BEGIN_SRC emacs-lisp
+  (use-package undo-tree
+    :config (global-undo-tree-mode 1)
+    (global-set-key (kbd "C-z") 'undo)
+    (defalias 'redo 'undo-tree-redo)
+    (global-set-key (kbd "C-S-z") 'redo))
+#+END_SRC
+
+Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set:
+#+BEGIN_SRC emacs-lisp
+  (use-package ivy
+    :config
+    (global-set-key (kbd "C-x b") 'ivy-switch-buffer)
+    (global-set-key (kbd "C-c v") 'ivy-push-view)
+    (global-set-key (kbd "C-c V") 'ivy-pop-view))
+
+  (use-package counsel
+    :after ivy
+    :config
+    (counsel-mode)
+    (global-set-key (kbd "M-x") 'counsel-M-x)
+    (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+    (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+    (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+    (global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
+    (global-set-key (kbd "<f1> l") 'counsel-find-library)
+    (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+    (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+    (global-set-key (kbd "<f2> j") 'counsel-set-variable)
+    )
+
+  (use-package swiper
+    :after ivy
+    :config (global-set-key (kbd "C-s") 'swiper-isearch))
+#+END_SRC
+
+Multiple cursors:
+
+#+BEGIN_SRC emacs-lisp
+  (use-package multiple-cursors
+    :config (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+    (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+    (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+    (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+    )
+#+END_SRC
+
+Helm:
+
+#+BEGIN_SRC emacs-lisp
+  (use-package helm
+    :config
+    (require 'helm-config)
+    (setq helm-input-idle-delay                     0.01
+          helm-reuse-last-window-split-state        t
+          helm-always-two-windows                   t
+          helm-split-window-inside-p                nil
+          helm-commands-using-frame                 '(completion-at-point
+                                                      helm-apropos
+                                                      helm-eshell-prompts helm-imenu
+                                                      helm-imenu-in-all-buffers)
+          helm-actions-inherit-frame-settings       t
+          helm-use-frame-when-more-than-two-windows t
+          helm-use-frame-when-dedicated-window      t
+          helm-show-action-window-other-window      'left
+          helm-allow-mouse                          t
+          helm-move-to-line-cycle-in-source         t
+          helm-autoresize-max-height                80 ; it is %.
+          helm-autoresize-min-height                20 ; it is %.
+          helm-follow-mode-persistent               t
+          helm-candidate-number-limit               500
+          helm-visible-mark-prefix                  "✓")
+    (add-to-list 'helm-sources-using-default-as-input 'helm-source-info-bash))
+
+  (use-package helm-swoop
+    :config
+    (global-set-key (kbd "M-i") 'helm-swoop)
+    (global-set-key (kbd "M-I") 'helm-swoop-back-to-last-point)
+    (global-set-key (kbd "C-c M-i") 'helm-multi-swoop)
+    (global-set-key (kbd "C-x M-i") 'helm-multi-swoop-all)
+
+    ;; When doing isearch, hand the word over to helm-swoop
+    (define-key isearch-mode-map (kbd "M-i") 'helm-swoop-from-isearch)
+    ;; From helm-swoop to helm-multi-swoop-all
+    (define-key helm-swoop-map (kbd "M-i") 'helm-multi-swoop-all-from-helm-swoop)
+    ;; When doing evil-search, hand the word over to helm-swoop
+    ;; (define-key evil-motion-state-map (kbd "M-i") 'helm-swoop-from-evil-search)
+
+    ;; Instead of helm-multi-swoop-all, you can also use helm-multi-swoop-current-mode
+    (define-key helm-swoop-map (kbd "M-m") 'helm-multi-swoop-current-mode-from-helm-swoop)
+
+    ;; Move up and down like isearch
+    (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
+    (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
+    (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
+    (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line)
+
+    ;; Save buffer when helm-multi-swoop-edit complete
+    (setq helm-multi-swoop-edit-save t)
+
+    ;; If this value is t, split window inside the current window
+    (setq helm-swoop-split-with-multiple-windows nil)
+
+    ;; Split direcion. 'split-window-vertically or 'split-window-horizontally
+    (setq helm-swoop-split-direction 'split-window-vertically)
+
+    ;; If nil, you can slightly boost invoke speed in exchange for text color
+    (setq helm-swoop-speed-or-color nil)
+
+    ;; ;; Go to the opposite side of line from the end or beginning of line
+    (setq helm-swoop-move-to-line-cycle t)
+
+    ;; Optional face for line numbers
+    ;; Face name is `helm-swoop-line-number-face`
+    (setq helm-swoop-use-line-number-face t)
+
+    ;; If you prefer fuzzy matching
+    (setq helm-swoop-use-fuzzy-match t))
+#+END_SRC
+
+* Everything org
+
+Set base org directory and default notes file:
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-base-directory "~/src/github.com/tomasfarias/org/")
+  (setq org-default-notes-file (concat org-base-directory "notes.org"))
+  (setq org-default-tasks-file (concat org-base-directory "tasks.org"))
+  (setq org-my-anki-file (concat org-base-directory "anki.org"))
+#+END_SRC
+
+org itself (although should come bundled with Emacs):
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :init
+    (setq org-use-speed-commands t
+          org-return-follows-link t
+          org-hide-emphasis-markers t
+          org-completion-use-ido t
+          org-outline-path-complete-in-steps nil
+          org-src-fontify-natively t
+          org-startup-indented t
+          org-src-tabs-acts-natively t
+          org-todo-keywords '((sequence "TODO(t)" "IN PROGRESS(p)" "|" "DONE(d)")
+                              (sequence "|" "CANCELED(c)")))
+    (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
+    (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+    :bind (("C-c l" . org-store-link)
+           ("C-c c" . org-capture)
+           ("C-M-|" . indent-rigidly))
+    :config (add-hook 'org-mode-hook 'visual-line-mode))
+
+  (use-package slime
+    :config (setq inferior-lisp-program "sbcl"))
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((lisp . t)
+     (emacs-lisp . t)
+     (python . t)))
+#+END_SRC
+
+Set-up org-capture templates:
+
+#+BEGIN_SRC emacs-lisp
+  (setq org-capture-templates
+        '(("t" "Task Entry" entry (file org-default-tasks-file)
+           "* TODO %?" :empty-lines 1)
+          ("a" "Anki " entry (file+headline org-my-anki-file "Dispatch")
+           "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK:\n:END:\n** Front\n%?\n** Back\n")
+          ("n" "Thought or Note" entry (file org-default-notes-file)
+           "* %?\n\n  %i\n\n  See: %a" :empty-lines 1)))
+#+END_SRC
+
+Install org-roam, bibliography management dependencies, and set-up keyboard shortcuts:
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org-roam
+    :init (setq org-roam-v2-ack t)
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n g" . org-roam-graph)
+           ("C-c n i" . org-roam-node-insert)
+           ("C-c n c" . org-roam-capture)
+           ("C-c n j" . org-roam-dailies-capture-today)
+           ("C-c n C-t" . org-roam-tag-add)
+           ("C-c n C-S-t" . org-roam-tag-remove))
+    :config (setq org-roam-directory org-base-directory)
+    (setq org-roam-db-location (concat org-roam-directory "org-roam.db")
+          org-roam-capture-templates '(("n" "Note" plain "%?"
+                                        :if-new (file+head "${slug}.org"
+                                                           "#+TITLE: ${title}\n#+DATE: %U\n\n")
+                                        :unnarrowed t
+                                        :immediate-finish t)
+                                       ("r" "Bibliography reference" plain "%?"
+                                        :if-new (file+head "${citekey}.org"
+                                                           "#+TITLE: ${title}\n#+DATE: %U\n#+LASTMOD: \n#+STARTUP: inlineimages latexpreview\n*topics*: \n\n${fullcite}")
+                                        :unnarrowed t
+                                        :immediate-finish t)
+
+                                       ("s" "Study notes" plain "%?"
+                                        :if-new (file+head "${slug}.org"
+                                                           "#+TITLE: ${title}\n#+AUTHOR:\n#+ROAM_KEY: \n#+STARTUP: inlineimages latexpreview\n\n")
+                                        :unnarrowed t
+                                        :immediate-finish t))))
+
+  (setq bibtex-completion-bibliography (concat org-base-directory "/bibliography/references.bib")
+        bibtex-completion-library-path (concat org-base-directory "/bibliography/pdfs")
+        bibtex-completion-notes-path (concat org-base-directory "/bibliography/notes"))
+  (setq bibtex-completion-pdf-open-function 'org-open-file)
+  (use-package helm-bibtex
+    :after helm)
+
+  (setq reftex-default-bibliography (concat org-base-directory "/bibliography/references.bib"))
+  (setq org-ref-bibliography-notes (concat org-base-directory "/bibliography/notes.org")
+        org-ref-default-bibliography (concat org-base-directory "/bibliography/references.bib")
+        org-ref-pdf-directory (concat org-base-directory "/bibliography/pdfs/"))
+  (use-package org-ref
+    :after org-roam)
+
+  (use-package org-roam-bibtex
+    :straight t
+    :after org-roam
+    :hook (org-roam-mode . org-roam-bibtex-mode)
+    :config (require 'org-ref)
+    (setq org-roam-bibtex-preformat-keywords
+          '("title" "url" "author-or-editor" "keywords" "date")))
+#+END_SRC
+
+* IRC with ERC
+
+Set nickname, real-name, and define a function to connect to [[irc.libera.chat]].
+
+#+BEGIN_SRC emacs-lisp
+  (setq
+   erc-nick "tomasfarias"
+   erc-user-full-name "Tomás Farías")
+
+  (defun erc-libera-start ()
+    (lambda ()
+      (interactive)
+      (erc :server "irc.libera.chat"
+           :port   "6667")))
+#+END_SRC
+
+* Language modes
+
+Python language mode settings:
+#+BEGIN_SRC emacs-lisp
+  (use-package py-isort
+    :config (add-hook 'before-save-hook 'py-isort-before-save))
+
+  (add-hook 'python-mode-hook
+            (lambda ()
+              (setq-default tab-width 4)
+              (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
+
+  (use-package blacken
+    :hook (python-mode . blacken-mode)
+    :config
+    (setq blacken-line-length '88)
+    (setq blacken-only-if-project-is-blackened t))
+#+END_SRC
+
+Arduino mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package arduino-mode
+    :after flycheck)
+#+END_SRC
+
+Terraform language mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package terraform-mode)
+#+END_SRC
+
+Dockerfile mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package dockerfile-mode
+    :config (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode)))
+#+END_SRC
+
+Groovy language mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package groovy-mode
+    :config (setq groovy-indent-offset 2))
+#+END_SRC
+
+Markdown mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package markdown-mode
+    :mode ("README\\.md\\'" . gfm-mode)
+    :init (setq markdown-command "multimarkdown"))
+#+END_SRC
+
+YAML mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package yaml-mode
+    :mode ("\\.yml\\'" . yaml-mode)
+    ("\\.yaml\\'" . yaml-mode))
+#+END_SRC
+
+Language server protocol for auto-completion with company-mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+    :config (add-hook 'after-init-hook 'global-company-mode)
+    (setq company-idle-delay 1)
+    (setq company-minimum-prefix-length 3)
+    (setq company-selection-wrap-around t)
+    (setq company-show-numbers 1)
+    (define-key company-active-map (kbd "C-n") 'company-select-next)
+    (define-key company-active-map (kbd "C-p") 'company-select-previous)
+    (define-key company-active-map (kbd "M-<") 'company-select-first)
+    (define-key company-active-map (kbd "M->") 'company-select-last))
+
+  (use-package which-key
+    :config
+    (which-key-mode))
+
+  (use-package lsp-mode
+    :init (setq lsp-keymap-prefix "C-c s")
+    :custom
+    ;; what to use when checking on-save. "check" is default, I prefer clippy
+    (lsp-rust-analyzer-cargo-watch-command "clippy")
+    (lsp-eldoc-render-all t)
+    (lsp-idle-delay 1.5)
+    ;; these distract me more than anything
+    (lsp-rust-analyzer-server-display-inlay-hints nil)
+    :hook
+    (python-mode . lsp)
+    (rustic-mode . lsp)
+    (groovy-mode . lsp)
+    (terraform-mode . lsp)
+    (lsp-mode . lsp-enable-which-key-integration)
+    :commands (lsp lsp-deferred)
+    :config (setq rustic-lsp-server 'rust-analyzer)
+    (setq rustic-analyzer-command '("rust-analyzer"))
+    (add-hook 'lsp-mode-hook 'lsp-ui-mode)
+    (add-to-list 'lsp-enabled-clients 'rust-analyzer))
+
+  (use-package lsp-ui
+    :commands lsp-ui-mode
+    :custom
+    (lsp-ui-peek-always-show t)
+    (lsp-ui-sideline-show-hover nil)
+    (lsp-ui-doc-enable nil))
+
+  (use-package lsp-treemacs
+    :commands lsp-treemacs-errors-list)
+
+  (use-package lsp-jedi
+    :ensure t
+    :config
+    (with-eval-after-load "lsp-mode"
+      (add-to-list 'lsp-disabled-clients 'pyls)
+      (add-to-list 'lsp-enabled-clients 'jedi)))
+#+END_SRC
+
+Solidity language mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package solidity-mode
+    :config (setq solidity-comment-style 'slash))
+#+END_SRC
+
+Rust language mode:
+#+BEGIN_SRC emacs-lisp
+  (use-package rustic
+    :bind (:map rustic-mode-map
+                ("M-j" . lsp-ui-imenu)
+                ("M-?" . lsp-find-references)
+                ("C-c C-c l" . flycheck-list-errors)
+                ("C-c C-c a" . lsp-execute-code-action)
+                ("C-c C-c r" . lsp-rename)
+                ("C-c C-c q" . lsp-workspace-restart)
+                ("C-c C-c Q" . lsp-workspace-shutdown)
+                ("C-c C-c s" . lsp-rust-analyzer-status))
+    :config (setq rustic-format-on-save t)
+    (setq rustic-format-trigger 'on-save)
+    ;;(add-to-list 'auto-mode-alist '("\\.rs\\'" . rustic-mode))
+    (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
+
+  (defun rk/rustic-mode-hook ()
+    ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+    ;; save rust buffers that are not file visiting. Once
+    ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+    ;; no longer be necessary.
+    (when buffer-file-name
+      (setq-local buffer-save-without-query t)))
+#+END_SRC
+
+Syntax checking with flycheck:
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck
+    :init (global-flycheck-mode))
+
+  (use-package flycheck-rust)
+  (push 'rustic-clippy flycheck-checkers)
+  (setq rustic-flycheck-clippy-params "--message-format=json")
+  (with-eval-after-load 'rustic-mode
+    (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
+
+  (use-package solidity-flycheck)
+#+END_SRC
