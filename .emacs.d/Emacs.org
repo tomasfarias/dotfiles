@@ -126,6 +126,11 @@ Magit:
 #+BEGIN_SRC emacs-lisp
   (use-package magit
     :config (global-set-key (kbd "C-c g") 'magit-file-dispatch))
+
+  (use-package pinentry
+    :config
+    (setf epg-pinentry-mode 'loopback)
+    (pinentry-start))
 #+END_SRC
 
 Projectile:
@@ -199,6 +204,17 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
     :config (global-set-key (kbd "C-s") 'swiper-isearch))
 #+END_SRC
 
+Whitespace mode:
+
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "C-c t") 'whitespace-mode)
+#+END_SRC
+
+Rainbows:
+#+BEGIN_SRC emacs-lisp
+  (use-package rainbow-delimiters)
+#+END_SRC
+
 Multiple cursors:
 
 #+BEGIN_SRC emacs-lisp
@@ -210,132 +226,120 @@ Multiple cursors:
     )
 #+END_SRC
 
-Helm:
-
-#+BEGIN_SRC emacs-lisp
-  (use-package helm
-    :config
-    (require 'helm-config)
-    (setq helm-input-idle-delay                     0.01
-          helm-reuse-last-window-split-state        t
-          helm-always-two-windows                   t
-          helm-split-window-inside-p                nil
-          helm-commands-using-frame                 '(completion-at-point
-                                                      helm-apropos
-                                                      helm-eshell-prompts helm-imenu
-                                                      helm-imenu-in-all-buffers)
-          helm-actions-inherit-frame-settings       t
-          helm-use-frame-when-more-than-two-windows t
-          helm-use-frame-when-dedicated-window      t
-          helm-show-action-window-other-window      'left
-          helm-allow-mouse                          t
-          helm-move-to-line-cycle-in-source         t
-          helm-autoresize-max-height                80 ; it is %.
-          helm-autoresize-min-height                20 ; it is %.
-          helm-follow-mode-persistent               t
-          helm-candidate-number-limit               500
-          helm-visible-mark-prefix                  "✓")
-    (add-to-list 'helm-sources-using-default-as-input 'helm-source-info-bash))
-
-  (use-package helm-swoop
-    :config
-    (global-set-key (kbd "M-i") 'helm-swoop)
-    (global-set-key (kbd "M-I") 'helm-swoop-back-to-last-point)
-    (global-set-key (kbd "C-c M-i") 'helm-multi-swoop)
-    (global-set-key (kbd "C-x M-i") 'helm-multi-swoop-all)
-
-    ;; When doing isearch, hand the word over to helm-swoop
-    (define-key isearch-mode-map (kbd "M-i") 'helm-swoop-from-isearch)
-    ;; From helm-swoop to helm-multi-swoop-all
-    (define-key helm-swoop-map (kbd "M-i") 'helm-multi-swoop-all-from-helm-swoop)
-    ;; When doing evil-search, hand the word over to helm-swoop
-    ;; (define-key evil-motion-state-map (kbd "M-i") 'helm-swoop-from-evil-search)
-
-    ;; Instead of helm-multi-swoop-all, you can also use helm-multi-swoop-current-mode
-    (define-key helm-swoop-map (kbd "M-m") 'helm-multi-swoop-current-mode-from-helm-swoop)
-
-    ;; Move up and down like isearch
-    (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
-    (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
-    (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
-    (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line)
-
-    ;; Save buffer when helm-multi-swoop-edit complete
-    (setq helm-multi-swoop-edit-save t)
-
-    ;; If this value is t, split window inside the current window
-    (setq helm-swoop-split-with-multiple-windows nil)
-
-    ;; Split direcion. 'split-window-vertically or 'split-window-horizontally
-    (setq helm-swoop-split-direction 'split-window-vertically)
-
-    ;; If nil, you can slightly boost invoke speed in exchange for text color
-    (setq helm-swoop-speed-or-color nil)
-
-    ;; ;; Go to the opposite side of line from the end or beginning of line
-    (setq helm-swoop-move-to-line-cycle t)
-
-    ;; Optional face for line numbers
-    ;; Face name is `helm-swoop-line-number-face`
-    (setq helm-swoop-use-line-number-face t)
-
-    ;; If you prefer fuzzy matching
-    (setq helm-swoop-use-fuzzy-match t))
-#+END_SRC
-
 * Everything org
 
 Set base org directory and default notes file:
 
 #+BEGIN_SRC emacs-lisp
-  (setq org-base-directory "~/src/github.com/tomasfarias/org/")
-  (setq org-default-notes-file (concat org-base-directory "notes.org"))
-  (setq org-default-tasks-file (concat org-base-directory "tasks.org"))
-  (setq org-my-anki-file (concat org-base-directory "anki.org"))
+  (defconst org-directory "~/src/github.com/tomasfarias/org/"
+    "org-mode directory and repo, where most of the org-mode file lives")
+  (defconst org-projects-dir (expand-file-name "projects" org-directory)
+    "Primary tasks directory.")
+  (defconst org-notes-dir (expand-file-name "notes" org-directory)
+    "Directory of shareable, technical notes.")
+  (defconst org-journal-dir (expand-file-name "journal" org-directory)
+    "Directory of journal notes.")
+  (defconst org-inbox-file (expand-file-name "Inbox.org" org-directory)
+    "New stuff collected in this file.")
+  (defconst org-work-inbox-file (expand-file-name "WorkInbox.org" org-directory)
+    "New work-related stuff collected in this file.")
+  (defconst org-babel-library-file (expand-file-name "org_library_of_babel.org" org-notes-dir)
+    "Org babel library.")
 #+END_SRC
 
-org itself (although should come bundled with Emacs):
+The org itself:
 
 #+BEGIN_SRC emacs-lisp
-  (use-package org
-    :init
-    (setq org-use-speed-commands t
-          org-return-follows-link t
-          org-hide-emphasis-markers t
-          org-completion-use-ido t
-          org-outline-path-complete-in-steps nil
-          org-src-fontify-natively t
-          org-startup-indented t
-          org-src-tabs-acts-natively t
-          org-todo-keywords '((sequence "TODO(t)" "IN PROGRESS(p)" "|" "DONE(d)")
-                              (sequence "|" "CANCELED(c)")))
-    (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
-    (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-    :bind (("C-c l" . org-store-link)
-           ("C-c c" . org-capture)
-           ("C-M-|" . indent-rigidly))
-    :config (add-hook 'org-mode-hook 'visual-line-mode))
+    (use-package org
+      :init
+      (setq org-use-speed-commands t
+            org-return-follows-link t
+            org-hide-emphasis-markers t
+            org-completion-use-ido t
+            org-outline-path-complete-in-steps nil
+            org-src-fontify-natively t
+            org-startup-indented t
+            org-src-tabs-acts-natively t
+            org-log-done 'time
+            org-log-into-drawer t
+            org-agenda-files (quote ("~/src/github.com/tomasfarias/org"
+                                     "~/src/github.com/tomasfarias/org/projects"))
+            org-agenda-span 10
+            org-agenda-start-on-weekday 1
+            org-agenda-include-diary nil
+            org-agenda-window-setup 'current-window
+            org-agenda-skip-scheduled-if-done nil
+            org-agenda-compact-blocks t
+            org-agenda-sticky t
+            org-super-agenda-header-separator ""
+            org-todo-keywords
+            (quote ((sequence "TODO(t)" "PROG(p)" "|" "DONE(d)")
+                    (sequence "WAITING(w@/!)" "|" "CANCELLED(c@/!)"))))
 
-  (use-package slime
-    :config (setq inferior-lisp-program "sbcl"))
+      (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
+      (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((lisp . t)
-     (emacs-lisp . t)
-     (python . t)))
+      :bind (("C-c o l" . org-store-link)
+             ("C-c o r r" . org-refile)
+             ("C-c o a a" . org-agenda)
+             ("<f9>" . org-agenda)
+             ("C-c o s" . org-sort)
+             ("C-c o c" . org-capture)
+             ("C-M-|" . indent-rigidly))
+      :config
+      (add-hook 'org-mode-hook 'visual-line-mode)
+      (add-hook 'org-mode-hook 'flyspell-mode))
+
+    (use-package slime
+      :config (setq inferior-lisp-program "sbcl"))
+
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((lisp . t)
+       (emacs-lisp . t)
+       (python . t)))
+
+    (use-package org-super-agenda
+      :config (org-super-agenda-mode))
+
+    (use-package org-journal
+      :commands (org-journal-new-entry org-capture)
+      :after (org-capture)
+      :bind
+      (("C-c n j" . org-journal-new-entry)
+       ("C-c o j" . org-journal-new-entry))
+      :custom
+      (org-journal-dir org-journal-dir)
+      (org-journal-date-format "%A, %d %B %Y")
+      (org-journal-enable-agenda-integration t))
+
 #+END_SRC
 
 Set-up org-capture templates:
 
 #+BEGIN_SRC emacs-lisp
+  (defun org-journal-find-location ()
+    ;; Open today's journal, but specify a non-nil prefix argument in order to
+    ;; inhibit inserting the heading; org-capture will insert the heading.
+    (org-journal-new-entry t)
+    (unless (eq org-journal-file-type 'daily)
+      (org-narrow-to-subtree))
+    (goto-char (point-max)))
+
   (setq org-capture-templates
-        '(("t" "Task Entry" entry (file org-default-tasks-file)
-           "* TODO %?" :empty-lines 1)
-          ("a" "Anki " entry (file+headline org-my-anki-file "Dispatch")
-           "* %<%H:%M>\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK:\n:END:\n** Front\n%?\n** Back\n")
-          ("n" "Thought or Note" entry (file org-default-notes-file)
-           "* %?\n\n  %i\n\n  See: %a" :empty-lines 1)))
+        '(("t" "Inbox" entry (file org-inbox-file)
+           "* TODO %?
+                  SCHEDULED: %t")
+          ("w" "Work inbox" entry (file org-work-inbox-file)
+           "* TODO %?
+                  SCHEDULED: %t
+                  DEADLINE: %t")
+          ("n" "Notes" entry (file org-notes-file)
+           "* %T\n%i%?")
+          ("j" "Journal" plain (function org-journal-find-location)
+           "** %(format-time-string org-journal-time-format)%^{Title}\n%i%?"
+           :jump-to-captured t
+           :immediate-finish t)))
 #+END_SRC
 
 Install org-roam, bibliography management dependencies, and set-up keyboard shortcuts:
@@ -351,7 +355,7 @@ Install org-roam, bibliography management dependencies, and set-up keyboard shor
            ("C-c n j" . org-roam-dailies-capture-today)
            ("C-c n C-t" . org-roam-tag-add)
            ("C-c n C-S-t" . org-roam-tag-remove))
-    :config (setq org-roam-directory org-base-directory)
+    :config (setq org-roam-directory org-directory)
     (setq org-roam-db-location (concat org-roam-directory "org-roam.db")
           org-roam-capture-templates '(("n" "Note" plain "%?"
                                         :if-new (file+head "${slug}.org"
@@ -370,17 +374,18 @@ Install org-roam, bibliography management dependencies, and set-up keyboard shor
                                         :unnarrowed t
                                         :immediate-finish t))))
 
-  (setq bibtex-completion-bibliography (concat org-base-directory "/bibliography/references.bib")
-        bibtex-completion-library-path (concat org-base-directory "/bibliography/pdfs")
-        bibtex-completion-notes-path (concat org-base-directory "/bibliography/notes"))
+  (setq bibtex-completion-bibliography (concat org-directory "/bibliography/references.bib")
+        bibtex-completion-library-path (concat org-directory "/bibliography/pdfs")
+        bibtex-completion-notes-path (concat org-directory "/bibliography/notes"))
   (setq bibtex-completion-pdf-open-function 'org-open-file)
   (use-package helm-bibtex
     :after helm)
 
-  (setq reftex-default-bibliography (concat org-base-directory "/bibliography/references.bib"))
-  (setq org-ref-bibliography-notes (concat org-base-directory "/bibliography/notes.org")
-        org-ref-default-bibliography (concat org-base-directory "/bibliography/references.bib")
-        org-ref-pdf-directory (concat org-base-directory "/bibliography/pdfs/"))
+  (setq reftex-default-bibliography (concat org-directory "/bibliography/references.bib"))
+  (setq org-ref-bibliography-notes (concat org-directory "/bibliography/notes.org")
+        org-ref-default-bibliography (concat org-directory "/bibliography/references.bib")
+        org-ref-pdf-directory (concat org-directory "/bibliography/pdfs/"))
+
   (use-package org-ref
     :after org-roam)
 
@@ -413,19 +418,28 @@ Set nickname, real-name, and define a function to connect to [[irc.libera.chat]]
 
 Python language mode settings:
 #+BEGIN_SRC emacs-lisp
+  (use-package pyvenv
+    :ensure t
+    :init
+    (setenv "WORKON_HOME" "~/.pyenv/versions")
+    (pyvenv-tracking-mode 1))
+
   (use-package py-isort
     :config (add-hook 'before-save-hook 'py-isort-before-save))
-
-  (add-hook 'python-mode-hook
-            (lambda ()
-              (setq-default tab-width 4)
-              (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
   (use-package blacken
     :hook (python-mode . blacken-mode)
     :config
-    (setq blacken-line-length '88)
     (setq blacken-only-if-project-is-blackened t))
+
+  (add-hook 'python-mode-hook
+            (lambda ()
+              (setq-default tab-width 4)
+              (add-to-list 'write-file-functions 'delete-trailing-whitespace)
+              (setq whitespace-style '(face empty trailing indentation::space))
+              (add-to-list 'company-backends 'company-jedi)))
+
+  (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
 #+END_SRC
 
 Arduino mode:
@@ -483,32 +497,51 @@ Language server protocol for auto-completion with company-mode:
     (which-key-mode))
 
   (use-package lsp-mode
-    :init (setq lsp-keymap-prefix "C-c s")
+    :init
     :custom
     ;; what to use when checking on-save. "check" is default, I prefer clippy
     (lsp-rust-analyzer-cargo-watch-command "clippy")
-    (lsp-eldoc-render-all t)
-    (lsp-idle-delay 1.5)
-    ;; these distract me more than anything
-    (lsp-rust-analyzer-server-display-inlay-hints nil)
+    (lsp-eldoc-render-all nil)
+    (lsp-idle-delay 0.5)
     :hook
     (python-mode . lsp)
     (rustic-mode . lsp)
     (groovy-mode . lsp)
     (terraform-mode . lsp)
     (lsp-mode . lsp-enable-which-key-integration)
-    :commands (lsp lsp-deferred)
-    :config (setq rustic-lsp-server 'rust-analyzer)
+    :commands
+    (lsp lsp-deferred)
+    :config
+    (setq lsp-keymap-prefix "C-c s")
+    (setq rustic-lsp-server 'rust-analyzer)
     (setq rustic-analyzer-command '("rust-analyzer"))
     (add-hook 'lsp-mode-hook 'lsp-ui-mode)
-    (add-to-list 'lsp-enabled-clients 'rust-analyzer))
+    (add-to-list 'lsp-enabled-clients 'rust-analyzer)
+    (add-hook 'lsp-after-open-hook 'lsp-enable-imenu)
+    (setq lsp-enable-symbol-highlighting t
+          lsp-modeline-diagnostics-enable t
+          lsp-modeline-code-actions-enable t
+          lsp-lens-enable nil
+          lsp-eldoc-enable-hover nil
+          lsp-signature-auto-activate nil
+          lsp-completion-enable t
+          lsp-completion-show-detail t
+          lsp-completion-show-kind t))
 
   (use-package lsp-ui
     :commands lsp-ui-mode
-    :custom
-    (lsp-ui-peek-always-show t)
-    (lsp-ui-sideline-show-hover nil)
-    (lsp-ui-doc-enable nil))
+    :config (setq lsp-ui-doc-enable nil
+                  lsp-ui-doc-use-childframe t
+                  lsp-ui-doc-position 'top
+                  lsp-ui-doc-include-signature t
+                  lsp-ui-sideline-enable nil
+                  lsp-ui-flycheck-enable t
+                  lsp-ui-flycheck-list-position 'right
+                  lsp-ui-flycheck-live-reporting nil
+                  lsp-ui-peek-enable nil
+                  lsp-ui-peek-list-width 60
+                  lsp-ui-peek-peek-height 25
+                  ))
 
   (use-package lsp-treemacs
     :commands lsp-treemacs-errors-list)
@@ -521,6 +554,9 @@ Language server protocol for auto-completion with company-mode:
       (add-to-list 'lsp-enabled-clients 'jedi)))
 #+END_SRC
 
+#+RESULTS:
+: t
+
 Solidity language mode:
 #+BEGIN_SRC emacs-lisp
   (use-package solidity-mode
@@ -529,28 +565,19 @@ Solidity language mode:
 
 Rust language mode:
 #+BEGIN_SRC emacs-lisp
-  (use-package rustic
-    :bind (:map rustic-mode-map
-                ("M-j" . lsp-ui-imenu)
-                ("M-?" . lsp-find-references)
-                ("C-c C-c l" . flycheck-list-errors)
-                ("C-c C-c a" . lsp-execute-code-action)
-                ("C-c C-c r" . lsp-rename)
-                ("C-c C-c q" . lsp-workspace-restart)
-                ("C-c C-c Q" . lsp-workspace-shutdown)
-                ("C-c C-c s" . lsp-rust-analyzer-status))
-    :config (setq rustic-format-on-save t)
-    (setq rustic-format-trigger 'on-save)
-    ;;(add-to-list 'auto-mode-alist '("\\.rs\\'" . rustic-mode))
-    (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
+  (use-package rust-mode
+    :config
+    (add-hook 'racer-mode-hook #'eldoc-mode)
+    (add-hook 'racer-mode-hook #'company-mode)
+    (define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
+    (setq rust-format-on-save t)
+    (setq rust-indent-offset 4))
 
-  (defun rk/rustic-mode-hook ()
-    ;; so that run C-c C-c C-r works without having to confirm, but don't try to
-    ;; save rust buffers that are not file visiting. Once
-    ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
-    ;; no longer be necessary.
-    (when buffer-file-name
-      (setq-local buffer-save-without-query t)))
+  (use-package cargo-mode
+    :config
+    (add-hook 'rust-mode-hook 'cargo-minor-mode))
+
+  (provide 'init-rust-mode)
 #+END_SRC
 
 Syntax checking with flycheck:

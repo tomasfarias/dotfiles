@@ -23,9 +23,9 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-export EDITOR="emacs -nw"
+export EDITOR="emacsclient -c -a \"emacs\""
 export GPG_TTY=$(tty)
-export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 
 # Rust paths
 export PATH="$HOME/.cargo/bin:$PATH"
