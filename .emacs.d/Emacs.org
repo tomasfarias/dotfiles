@@ -85,16 +85,39 @@ Hide the mouse while typing:
   (setq make-pointer-invisible t)
 #+END_SRC
 
+Scrolling smoothly:
+#+BEGIN_SRC emacs-lisp
+  (use-package smooth-scrolling
+    :init (smooth-scrolling-mode 1))
+#+END_SRC
+
 By default, do not indent with tabs:
 #+BEGIN_SRC emacs-lisp
   (setq-default indent-tabs-mode nil)
 #+END_SRC
 
-Attempt to set default font:
+Attempt to set fonts:
 #+BEGIN_SRC emacs-lisp
   (when (member "Hack-Regular" (font-family-list))
     (set-frame-font "Hack-Regular-13:Regular" t t))
+
+  (custom-theme-set-faces
+   'user
+   '(variable-pitch ((t (:family "Noto Sans Display" :height 120 :weight normal))))
+   '(fixed-pitch ((t ( :family "Hack" :slant normal :weight normal :height 120 :width normal)))))
+
+  (custom-theme-set-faces
+   'user
+   '(org-block                 ((t (:inherit fixed-pitch))))
+   '(org-table                 ((t (:inherit fixed-pitch))))
+   '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
+   '(org-property-value        ((t (:inherit fixed-pitch))) t)
+   '(org-special-keyword       ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+   '(org-tag                   ((t (:inherit (shadow fixed-pitch) :weight bold))))
+   '(org-verbatim              ((t (:inherit (shadow fixed-pitch))))))
 #+END_SRC
+
+#+RESULTS:
 
 Display line numbers everywhere:
 #+BEGIN_SRC emacs-lisp
@@ -158,7 +181,15 @@ Treemacs mode for file and project exploring:
         (`(t . _)
          (treemacs-git-mode 'simple))))
     :bind (:map global-map
-                ("<f8>" . treemacs)))
+                ("<f8>" . treemacs)
+                ("C-c t t" . treemacs)
+                ("C-c t c" . treemacs-collapse-project)
+                ("C-c t s" . treemacs-switch-workspace)
+                ("C-c t r" . treemacs-remove-workspace)
+                ("C-c t m" . treemacs-rename-workspace)
+                ("C-c t w r" . treemacs-remove-project-from-workspace)
+                ("C-c t w a" . treemacs-add-project-to-workspace)
+                ("C-c t a" . treemacs-add-project-to-workspace)))
 
   (use-package treemacs-magit
     :after (treemacs magit))
@@ -190,13 +221,13 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
     (counsel-mode)
     (global-set-key (kbd "M-x") 'counsel-M-x)
     (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-    (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-    (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-    (global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
-    (global-set-key (kbd "<f1> l") 'counsel-find-library)
-    (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-    (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-    (global-set-key (kbd "<f2> j") 'counsel-set-variable)
+    (global-set-key (kbd "C-c c f") 'counsel-describe-function)
+    (global-set-key (kbd "C-c c v") 'counsel-describe-variable)
+    (global-set-key (kbd "C-c c o") 'counsel-describe-symbol)
+    (global-set-key (kbd "C-c c l") 'counsel-find-library)
+    (global-set-key (kbd "C-c c i") 'counsel-info-lookup-symbol)
+    (global-set-key (kbd "C-c c u") 'counsel-unicode-char)
+    (global-set-key (kbd "C-c c j") 'counsel-set-variable)
     )
 
   (use-package swiper
@@ -204,10 +235,11 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
     :config (global-set-key (kbd "C-s") 'swiper-isearch))
 #+END_SRC
 
-Whitespace mode:
+Whitespace management:
 
 #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "C-c t") 'whitespace-mode)
+  (global-set-key (kbd "C-c w w") 'whitespaceg-mode)
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 
 Rainbows:
@@ -222,8 +254,20 @@ Multiple cursors:
     :config (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
     (global-set-key (kbd "C->") 'mc/mark-next-like-this)
     (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
-    (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
-    )
+    (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this))
+#+END_SRC
+
+Snippet management:
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet
+    :straight t
+    :config
+    (global-set-key (kbd "C-c y n") 'yas-new-snippet)
+    (global-set-key (kbd "C-c y v") 'yas-visit-snippet-file)
+    (setq yas-snippet-dirs
+          '("~/src/github.com/tomasfarias/snippets"
+            )))
+  (yas-global-mode 1)
 #+END_SRC
 
 * Everything org
@@ -234,7 +278,7 @@ Set base org directory and default notes file:
   (defconst org-directory "~/src/github.com/tomasfarias/org/"
     "org-mode directory and repo, where most of the org-mode file lives")
   (defconst org-projects-dir (expand-file-name "projects" org-directory)
-    "Primary tasks directory.")
+    "Project-specific tasks directory.")
   (defconst org-notes-dir (expand-file-name "notes" org-directory)
     "Directory of shareable, technical notes.")
   (defconst org-journal-dir (expand-file-name "journal" org-directory)
@@ -250,68 +294,80 @@ Set base org directory and default notes file:
 The org itself:
 
 #+BEGIN_SRC emacs-lisp
-    (use-package org
-      :init
-      (setq org-use-speed-commands t
-            org-return-follows-link t
-            org-hide-emphasis-markers t
-            org-completion-use-ido t
-            org-outline-path-complete-in-steps nil
-            org-src-fontify-natively t
-            org-startup-indented t
-            org-src-tabs-acts-natively t
-            org-log-done 'time
-            org-log-into-drawer t
-            org-agenda-files (quote ("~/src/github.com/tomasfarias/org"
-                                     "~/src/github.com/tomasfarias/org/projects"))
-            org-agenda-span 10
-            org-agenda-start-on-weekday 1
-            org-agenda-include-diary nil
-            org-agenda-window-setup 'current-window
-            org-agenda-skip-scheduled-if-done nil
-            org-agenda-compact-blocks t
-            org-agenda-sticky t
-            org-super-agenda-header-separator ""
-            org-todo-keywords
-            (quote ((sequence "TODO(t)" "PROG(p)" "|" "DONE(d)")
-                    (sequence "WAITING(w@/!)" "|" "CANCELLED(c@/!)"))))
+  (use-package org
+    :init
+    (setq org-use-speed-commands t
+          org-return-follows-link t
+          org-hide-emphasis-markers t
+          org-completion-use-ido t
+          org-outline-path-complete-in-steps nil
+          org-src-fontify-natively t
+          org-fontify-done-headline t
+          org-pretty-entities t
+          org-startup-indented t
+          org-src-tabs-acts-natively t
+          org-log-done 'time
+          org-log-into-drawer t
+          org-agenda-files (quote ("~/src/github.com/tomasfarias/org"
+                                   "~/src/github.com/tomasfarias/org/notes"))
+          org-agenda-span 10
+          org-agenda-start-on-weekday 1
+          org-agenda-include-diary nil
+          org-agenda-window-setup 'current-window
+          org-agenda-skip-scheduled-if-done nil
+          org-agenda-compact-blocks t
+          org-agenda-sticky t
+          org-super-agenda-header-separator ""
+          org-todo-keywords
+          (quote ((sequence "TODO(t)" "PROG(p)" "|" "DONE(d)")
+                  (sequence "WAITING(w@/!)" "|" "CANCELLED(c@/!)"))))
 
-      (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
-      (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
+    (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
+    (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 
-      :bind (("C-c o l" . org-store-link)
-             ("C-c o r r" . org-refile)
-             ("C-c o a a" . org-agenda)
-             ("<f9>" . org-agenda)
-             ("C-c o s" . org-sort)
-             ("C-c o c" . org-capture)
-             ("C-M-|" . indent-rigidly))
-      :config
-      (add-hook 'org-mode-hook 'visual-line-mode)
-      (add-hook 'org-mode-hook 'flyspell-mode))
+    :bind (("C-c o l" . org-store-link)
+           ("C-c o r r" . org-refile)
+           ("C-c o a a" . org-agenda)
+           ("<f9>" . org-agenda)
+           ("C-c o s" . org-sort)
+           ("C-c o c" . org-capture)
+           ("C-M-|" . indent-rigidly))
+    :config
+    (add-hook 'org-mode-hook 'visual-line-mode)
+    (add-hook 'org-mode-hook 'variable-pitch-mode)
+    (add-hook 'org-mode-hook 'flyspell-mode))
 
-    (use-package slime
-      :config (setq inferior-lisp-program "sbcl"))
+  (use-package org-preview-html)
 
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((lisp . t)
-       (emacs-lisp . t)
-       (python . t)))
+  (use-package org-fragtog
+    :config
+    (add-hook 'org-mode-hook 'org-fragtog-mode))
 
-    (use-package org-super-agenda
-      :config (org-super-agenda-mode))
+  (use-package org-superstar
+    :config
+    (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
 
-    (use-package org-journal
-      :commands (org-journal-new-entry org-capture)
-      :after (org-capture)
-      :bind
-      (("C-c n j" . org-journal-new-entry)
-       ("C-c o j" . org-journal-new-entry))
-      :custom
-      (org-journal-dir org-journal-dir)
-      (org-journal-date-format "%A, %d %B %Y")
-      (org-journal-enable-agenda-integration t))
+  (use-package slime
+    :config (setq inferior-lisp-program "sbcl"))
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((lisp . t)
+     (emacs-lisp . t)
+     (python . t)))
+
+  (use-package org-super-agenda
+    :config (org-super-agenda-mode))
+
+  (use-package org-journal
+    :commands (org-journal-new-entry org-capture)
+    :after (org-capture)
+    :bind
+    (("C-c o j" . org-journal-new-entry))
+    :custom
+    (org-journal-dir org-journal-dir)
+    (org-journal-date-format "%A, %d %B %Y")
+    (org-journal-enable-agenda-integration t))
 
 #+END_SRC
 
@@ -327,22 +383,21 @@ Set-up org-capture templates:
     (goto-char (point-max)))
 
   (setq org-capture-templates
-        '(("t" "Inbox" entry (file org-inbox-file)
+        '(("i" "Inbox" entry (file org-inbox-file)
            "* TODO %?
-                  SCHEDULED: %t")
+            SCHEDULED: %t
+            DEADLINE: %t")
           ("w" "Work inbox" entry (file org-work-inbox-file)
            "* TODO %?
-                  SCHEDULED: %t
-                  DEADLINE: %t")
-          ("n" "Notes" entry (file org-notes-file)
-           "* %T\n%i%?")
+            SCHEDULED: %t
+            DEADLINE: %t")
           ("j" "Journal" plain (function org-journal-find-location)
            "** %(format-time-string org-journal-time-format)%^{Title}\n%i%?"
            :jump-to-captured t
            :immediate-finish t)))
 #+END_SRC
 
-Install org-roam, bibliography management dependencies, and set-up keyboard shortcuts:
+Install org-roam:
 
 #+BEGIN_SRC emacs-lisp
   (use-package org-roam
@@ -356,35 +411,71 @@ Install org-roam, bibliography management dependencies, and set-up keyboard shor
            ("C-c n C-t" . org-roam-tag-add)
            ("C-c n C-S-t" . org-roam-tag-remove))
     :config (setq org-roam-directory org-directory)
+    (org-roam-db-autosync-mode)
     (setq org-roam-db-location (concat org-roam-directory "org-roam.db")
-          org-roam-capture-templates '(("n" "Note" plain "%?"
-                                        :if-new (file+head "${slug}.org"
-                                                           "#+TITLE: ${title}\n#+DATE: %U\n\n")
+          org-roam-completion-everywhere t
+          org-roam-capture-templates '(("l" "Literature note")
+                                       ("lb" "Book" plain "%?"
+                                        :if-new (file+head "notes/${slug}.org"
+                                                           "#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+CREATED: %u\n#+LASTMOD: \n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n\n"
+                                                           )
                                         :unnarrowed t
                                         :immediate-finish t)
-                                       ("r" "Bibliography reference" plain "%?"
-                                        :if-new (file+head "${citekey}.org"
-                                                           "#+TITLE: ${title}\n#+DATE: %U\n#+LASTMOD: \n#+STARTUP: inlineimages latexpreview\n*topics*: \n\n${fullcite}")
+                                       ("lc" "Course" plain "%?"
+                                        :if-new (file+head "notes/${slug}.org"
+                                                           "#+TITLE: ${title}\n#+AUTHOR: ${author-or-editor}\n#+FILETAGS: ${keywords}\n#+CREATED: %u\n#+LASTMOD: \n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n\n"
+                                                           )
                                         :unnarrowed t
                                         :immediate-finish t)
-
-                                       ("s" "Study notes" plain "%?"
-                                        :if-new (file+head "${slug}.org"
-                                                           "#+TITLE: ${title}\n#+AUTHOR:\n#+ROAM_KEY: \n#+STARTUP: inlineimages latexpreview\n\n")
+                                       ("la" "Article" plain "%?"
+                                        :if-new (file+head "notes/${slug}.org"
+                                                           "#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+CREATED: %u\n#+LASTMOD: \n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n\n"
+                                                           )
                                         :unnarrowed t
-                                        :immediate-finish t))))
+                                        :immediate-finish t)
+                                       ("lp" "Paper" plain "%?"
+                                        :if-new (file+head "notes/${slug}.org"
+                                                           "#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+CREATED: %u\n#+LASTMOD: \n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n\n"
+                                                           )
+                                        :unnarrowed t
+                                        :immediate-finish t)
+                                       ("p" "Permanent note" plain "%?"
+                                        :if-new (file+head "notes/${slug}.org"
+                                                           "#+TITLE: ${title}\n#+FILETAGS:\n#+CREATED: %u\n#+LASTMOD: \n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n\n"
+                                                           )
+                                        :unnarrowed t
+                                        :immediate-finish t))
+          time-stamp-start "#\\+lastmod: [\t]*"))
+  (use-package org-roam-ui
+    :after org-roam
+    :straight
+    (:host github :repo "org-roam/org-roam-ui" :branch "main" :files ("*.el" "out"))
+    :config
+    (setq org-roam-ui-sync-theme t
+          org-roam-ui-follow t
+          org-roam-ui-update-on-save t
+          org-roam-ui-open-on-start t))
+#+END_SRC
 
-  (setq bibtex-completion-bibliography (concat org-directory "/bibliography/references.bib")
-        bibtex-completion-library-path (concat org-directory "/bibliography/pdfs")
-        bibtex-completion-notes-path (concat org-directory "/bibliography/notes"))
-  (setq bibtex-completion-pdf-open-function 'org-open-file)
-  (use-package helm-bibtex
-    :after helm)
+Bibliography and references:
 
-  (setq reftex-default-bibliography (concat org-directory "/bibliography/references.bib"))
-  (setq org-ref-bibliography-notes (concat org-directory "/bibliography/notes.org")
-        org-ref-default-bibliography (concat org-directory "/bibliography/references.bib")
-        org-ref-pdf-directory (concat org-directory "/bibliography/pdfs/"))
+#+BEGIN_SRC emacs-lisp
+  (setq bibtex-completion-bibliography (list (concat org-directory "bibliography/references.bib"))
+        bibtex-completion-library-path (concat org-directory "bibliography/pdfs/")
+        bibtex-completion-notes-path (concat org-directory "notes/")
+        org-bibtex-file (list (concat org-directory "bibliography/references.bib"))
+        bibtex-completion-notes-template-multiple-files "#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+DATE: %U\n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n:PROPERTIES:\n:ID: ${id}\n:Custom_ID: ${=key=}\n:AUTHOR: ${author-or-editor}\n:ROAM_REFS: ${citekey}\n:BTYPE: \n:YEAR: ${year}:END:")
+
+  (setq bibtex-completion-display-formats
+        '((article       . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${journal:40}")
+          (inbook        . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*}")
+          (incollection  . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
+          (inproceedings . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
+          (t             . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*}")))
+
+  (setq bibtex-completion-pdf-open-function
+        (lambda (fpath)
+          (start-process "open" "*open*" "open" fpath)))
 
   (use-package org-ref
     :after org-roam)
@@ -392,32 +483,83 @@ Install org-roam, bibliography management dependencies, and set-up keyboard shor
   (use-package org-roam-bibtex
     :straight t
     :after org-roam
-    :hook (org-roam-mode . org-roam-bibtex-mode)
-    :config (require 'org-ref)
-    (setq org-roam-bibtex-preformat-keywords
-          '("title" "url" "author-or-editor" "keywords" "date")))
+    :config (require 'org-ref) (require 'org-ref-ivy)
+    (setq orb-preformat-templates t
+          orb-preformat-keywords
+          '("=key=" "title" "url" "doi" "author-or-editor" "keywords" "year" "citekey" "fullcite")
+          org-roam-bibtex-preformat-keywords
+          '("=key=" "title" "url" "doi" "author-or-editor" "keywords" "year" "citekey" "fullcite")))
+
+  (use-package ivy-bibtex
+    :config
+    (setq ivy-re-builders-alist
+          '((ivy-bibtex . ivy--regex-ignore-order)
+            (t . ivy--regex-plus))))
+
+  (setq org-ref-insert-link-function 'org-ref-insert-link-hydra/body
+        org-ref-insert-cite-function 'org-ref-cite-insert-ivy
+        org-ref-insert-label-function 'org-ref-insert-label-link
+        org-ref-insert-ref-function 'org-ref-insert-ref-link
+        org-ref-cite-onclick-function (lambda (_) (org-ref-citation-hydra/body)))
+
+  (use-package citar
+    :straight t
+    :after org-roam
+    :custom
+    (org-cite-global-bibliography '("~/src/github.com/tomasfarias/org/bibliography/references.bib"))
+    (org-cite-insert-processor 'citar)
+    (org-cite-follow-processor 'citar)
+    (org-cite-activate-processor 'citar)
+    (citar-bibliography org-cite-global-bibliography)
+    (bibtex-set-dialect citar--insert-bibtex)
+    (setq citar-symbols
+          `((file ,(all-the-icons-faicon "file-o" :face 'all-the-icons-green :v-adjust -0.1) . " ")
+            (note ,(all-the-icons-material "speaker_notes" :face 'all-the-icons-blue :v-adjust -0.3) . " ")
+            (link ,(all-the-icons-octicon "link" :face 'all-the-icons-orange :v-adjust 0.01) . " ")))
+    (setq citar-symbol-separator "  ")
+    ;; optional: org-cite-insert is also bound to C-c C-x C-@
+    :bind
+    (:map org-mode-map :package org ("C-c n b" . #'org-cite-insert)))
+#+END_SRC
+
+Deft for org files:
+
+#+BEGIN_SRC emacs-lisp
+  (use-package deft
+    :after org
+    :bind
+    ("C-c d d" . deft)
+    :config
+    (setq deft-recursive t)
+    (setq deft-use-filter-string-for-filename t)
+    (setq deft-default-extension 'org)
+    (setq deft-text-mode 'org-mode)
+    (setq deft-use-filename-as-title t)
+    (setq deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n")
+
+    (setq deft-directory org-notes-dir))
 #+END_SRC
 
 * IRC with ERC
 
-Set nickname, real-name, and define a function to connect to [[irc.libera.chat]].
+ Set nickname, real-name, and define a function to connect to [[irc.libera.chat]].
 
-#+BEGIN_SRC emacs-lisp
-  (setq
-   erc-nick "tomasfarias"
-   erc-user-full-name "Tomás Farías")
+ #+BEGIN_SRC emacs-lisp
+   (setq
+    erc-nick "tomasfarias"
+    erc-user-full-name "Tomás Farías")
 
-  (defun erc-libera-start ()
-    (lambda ()
-      (interactive)
-      (erc :server "irc.libera.chat"
-           :port   "6667")))
-#+END_SRC
+   (defun erc-libera-start ()
+     (lambda ()
+       (interactive)
+       (erc :server "irc.libera.chat"
+            :port   "6667")))
+ #+END_SRC
 
 * Language modes
 
-Python language mode settings:
-#+BEGIN_SRC emacs-lisp
+ Python language mode settings:
+ #+BEGIN_SRC emacs-lisp
   (use-package pyvenv
     :ensure t
     :init
@@ -483,8 +625,8 @@ Language server protocol for auto-completion with company-mode:
 #+BEGIN_SRC emacs-lisp
   (use-package company
     :config (add-hook 'after-init-hook 'global-company-mode)
-    (setq company-idle-delay 1)
-    (setq company-minimum-prefix-length 3)
+    (setq company-idle-delay 0.5)
+    (setq company-minimum-prefix-length 1)
     (setq company-selection-wrap-around t)
     (setq company-show-numbers 1)
     (define-key company-active-map (kbd "C-n") 'company-select-next)
@@ -512,7 +654,8 @@ Language server protocol for auto-completion with company-mode:
     :commands
     (lsp lsp-deferred)
     :config
-    (setq lsp-keymap-prefix "C-c s")
+    (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
+    (setq lsp-keymap-prefix "C-c l")
     (setq rustic-lsp-server 'rust-analyzer)
     (setq rustic-analyzer-command '("rust-analyzer"))
     (add-hook 'lsp-mode-hook 'lsp-ui-mode)
@@ -554,9 +697,6 @@ Language server protocol for auto-completion with company-mode:
       (add-to-list 'lsp-enabled-clients 'jedi)))
 #+END_SRC
 
-#+RESULTS:
-: t
-
 Solidity language mode:
 #+BEGIN_SRC emacs-lisp
   (use-package solidity-mode
@@ -583,7 +723,13 @@ Rust language mode:
 Syntax checking with flycheck:
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck
-    :init (global-flycheck-mode))
+    :init (global-flycheck-mode)
+    :after lsp-mode)
+
+  (use-package flycheck-pycheckers
+    :after flycheck)
+  (with-eval-after-load 'flycheck
+    (add-hook 'flycheck-mode-hook #'flycheck-pycheckers-setup))
 
   (use-package flycheck-rust)
   (push 'rustic-clippy flycheck-checkers)
