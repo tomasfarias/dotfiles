@@ -1,0 +1,9 @@
+[time]
+disabled = false
+format = '[$time]($style) '
+time_format = "%H:%M"
+
+[username]
+disabled = false
+show_always = true
+style_user = "bold blue"
