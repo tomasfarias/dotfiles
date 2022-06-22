@@ -13,30 +13,32 @@
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
+
 (setq package-enable-at-startup nil)
 
-;; Initialize packages
-(require 'package)
-(setq package-archives '(("melpa" . "http://melpa.org/packages/")
-                         ("gnu" . "http://elpa.gnu.org/packages/")))
-
-(package-initialize)
-(let ((elapsed (float-time (time-subtract (current-time) emacs-start-time))))
-  (message "Loaded packages in %.3fs" elapsed))
-
-;; Install use-package
+;; Configure straight
 (straight-use-package 'use-package)
-(setq use-package-always-ensure 't)
-(setq straight-use-package-by-default t)
+(straight-use-package 'el-patch)
 
+;; Configure use-package to use straight.el by default
+(use-package straight
+             :custom (straight-use-package-by-default t))
+
+(let ((elapsed (float-time (time-subtract (current-time) emacs-start-time))))
+  (message "Loaded straight in %.3fs" elapsed))
+
+;; Load custom configuration
 (setq custom-file "~/.emacs.d/custom.el")
 (when (file-exists-p custom-file)
   (load custom-file))
 
-(require 'org)
+;; Load org configuration
+(use-package org
+  :ensure t)
+
 (org-babel-load-file
  (expand-file-name "Emacs.org" user-emacs-directory))
 
 ;; Message how long it took to load everything
 (let ((elapsed (float-time (time-subtract (current-time) emacs-start-time))))
-  (message "Loading settings...done (%.3fs)" elapsed))
+  (message "Loaded packages in %.3fs" elapsed))

@@ -32,7 +32,6 @@ Disable many things:
     (tool-bar-mode -1))
   (when (functionp 'blink-cursor-mode)
     (blink-cursor-mode -1))
-
   (setq inhibit-startup-message t
         initial-major-mode 'fundamental-mode)
 #+END_SRC
@@ -98,13 +97,13 @@ By default, do not indent with tabs:
 
 Attempt to set fonts:
 #+BEGIN_SRC emacs-lisp
-  (when (member "Hack-Regular" (font-family-list))
-    (set-frame-font "Hack-Regular-13:Regular" t t))
+  (when (member "MonoLisa-Regular" (font-family-list))
+    (set-frame-font "MonoLisa-Regular-13:Regular" t t))
 
   (custom-theme-set-faces
    'user
    '(variable-pitch ((t (:family "Noto Sans Display" :height 120 :weight normal))))
-   '(fixed-pitch ((t ( :family "Hack" :slant normal :weight normal :height 120 :width normal)))))
+   '(fixed-pitch ((t (:family "MonoLisa" :slant normal :weight normal :height 120 :width normal)))))
 
   (custom-theme-set-faces
    'user
@@ -116,8 +115,6 @@ Attempt to set fonts:
    '(org-tag                   ((t (:inherit (shadow fixed-pitch) :weight bold))))
    '(org-verbatim              ((t (:inherit (shadow fixed-pitch))))))
 #+END_SRC
-
-#+RESULTS:
 
 Display line numbers everywhere:
 #+BEGIN_SRC emacs-lisp
@@ -204,7 +201,8 @@ Undo-tree with undo and redo bindings:
     :config (global-undo-tree-mode 1)
     (global-set-key (kbd "C-z") 'undo)
     (defalias 'redo 'undo-tree-redo)
-    (global-set-key (kbd "C-S-z") 'redo))
+    (global-set-key (kbd "C-S-z") 'redo)
+    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d./.cache"))))
 #+END_SRC
 
 Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set:
@@ -368,8 +366,8 @@ The org itself:
     (org-journal-dir org-journal-dir)
     (org-journal-date-format "%A, %d %B %Y")
     (org-journal-enable-agenda-integration t))
-
 #+END_SRC
+
 
 Set-up org-capture templates:
 
