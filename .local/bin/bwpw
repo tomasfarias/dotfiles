@@ -1,0 +1,5 @@
+#!/bin/sh
+
+bw list items --search "$1" | jq -r --arg username "$2" '.[].login
+    | select(.username | . and contains($username))
+    | .password' | xargs -d '\n' wl-copy
