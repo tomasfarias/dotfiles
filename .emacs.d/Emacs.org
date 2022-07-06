@@ -1,5 +1,5 @@
 # -*- mode: org; coding: utf-8; -*-
-#+ TITLE: My EMACS configuration
+#+ TITLE: My Emacs configuration
 #+ AUTHOR: Tomás Farías Santana
 
 * General settings
@@ -90,6 +90,12 @@ Scrolling smoothly:
     :init (smooth-scrolling-mode 1))
 #+END_SRC
 
+Transparency (requires native Wayland):
+#+BEGIN_SRC emacs-lisp
+  (set-frame-parameter (selected-frame) 'alpha-background 85) ; For current frame
+  (add-to-list 'default-frame-alist '(alpha-background . 85)) ; For all new frames henceforth
+#+END_SRC
+
 By default, do not indent with tabs:
 #+BEGIN_SRC emacs-lisp
   (setq-default indent-tabs-mode nil)
@@ -102,7 +108,7 @@ Attempt to set fonts:
 
   (custom-theme-set-faces
    'user
-   '(variable-pitch ((t (:family "Noto Sans Display" :height 120 :weight normal))))
+   '(variable-pitch ((t (:family "Source Sans Pro" :height 120 :weight normal))))
    '(fixed-pitch ((t (:family "MonoLisa" :slant normal :weight normal :height 120 :width normal)))))
 
   (custom-theme-set-faces
@@ -202,7 +208,7 @@ Undo-tree with undo and redo bindings:
     (global-set-key (kbd "C-z") 'undo)
     (defalias 'redo 'undo-tree-redo)
     (global-set-key (kbd "C-S-z") 'redo)
-    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d./.cache"))))
+    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/.cache"))))
 #+END_SRC
 
 Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set:
@@ -558,28 +564,28 @@ Deft for org files:
 
  Python language mode settings:
  #+BEGIN_SRC emacs-lisp
-  (use-package pyvenv
-    :ensure t
-    :init
-    (setenv "WORKON_HOME" "~/.pyenv/versions")
-    (pyvenv-tracking-mode 1))
+   (use-package pyvenv
+     :ensure t
+     :init
+     (setenv "WORKON_HOME" "~/.pyenv/versions")
+     (pyvenv-tracking-mode 1))
 
-  (use-package py-isort
-    :config (add-hook 'before-save-hook 'py-isort-before-save))
+   (use-package py-isort
+     :config (add-hook 'before-save-hook 'py-isort-before-save))
 
-  (use-package blacken
-    :hook (python-mode . blacken-mode)
-    :config
-    (setq blacken-only-if-project-is-blackened t))
+   (use-package blacken
+     :hook (python-mode . blacken-mode)
+     :config
+     (setq blacken-only-if-project-is-blackened t))
 
-  (add-hook 'python-mode-hook
-            (lambda ()
-              (setq-default tab-width 4)
-              (add-to-list 'write-file-functions 'delete-trailing-whitespace)
-              (setq whitespace-style '(face empty trailing indentation::space))
-              (add-to-list 'company-backends 'company-jedi)))
+   (add-hook 'python-mode-hook
+             (lambda ()
+               (setq-default tab-width 4)
+               (add-to-list 'write-file-functions 'delete-trailing-whitespace)
+               (setq whitespace-style '(face empty trailing indentation::space))))
 
-  (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
+   (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
+   (add-hook 'python-mode-hook 'eldoc-mode)
 #+END_SRC
 
 Arduino mode:
@@ -623,7 +629,7 @@ Language server protocol for auto-completion with company-mode:
 #+BEGIN_SRC emacs-lisp
   (use-package company
     :config (add-hook 'after-init-hook 'global-company-mode)
-    (setq company-idle-delay 0.5)
+    (setq company-idle-delay 1)
     (setq company-minimum-prefix-length 1)
     (setq company-selection-wrap-around t)
     (setq company-show-numbers 1)
@@ -632,67 +638,8 @@ Language server protocol for auto-completion with company-mode:
     (define-key company-active-map (kbd "M-<") 'company-select-first)
     (define-key company-active-map (kbd "M->") 'company-select-last))
 
-  (use-package which-key
-    :config
-    (which-key-mode))
-
-  (use-package lsp-mode
-    :init
-    :custom
-    ;; what to use when checking on-save. "check" is default, I prefer clippy
-    (lsp-rust-analyzer-cargo-watch-command "clippy")
-    (lsp-eldoc-render-all nil)
-    (lsp-idle-delay 0.5)
-    :hook
-    (python-mode . lsp)
-    (rustic-mode . lsp)
-    (groovy-mode . lsp)
-    (terraform-mode . lsp)
-    (lsp-mode . lsp-enable-which-key-integration)
-    :commands
-    (lsp lsp-deferred)
-    :config
-    (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
-    (setq lsp-keymap-prefix "C-c l")
-    (setq rustic-lsp-server 'rust-analyzer)
-    (setq rustic-analyzer-command '("rust-analyzer"))
-    (add-hook 'lsp-mode-hook 'lsp-ui-mode)
-    (add-to-list 'lsp-enabled-clients 'rust-analyzer)
-    (add-hook 'lsp-after-open-hook 'lsp-enable-imenu)
-    (setq lsp-enable-symbol-highlighting t
-          lsp-modeline-diagnostics-enable t
-          lsp-modeline-code-actions-enable t
-          lsp-lens-enable nil
-          lsp-eldoc-enable-hover nil
-          lsp-signature-auto-activate nil
-          lsp-completion-enable t
-          lsp-completion-show-detail t
-          lsp-completion-show-kind t))
-
-  (use-package lsp-ui
-    :commands lsp-ui-mode
-    :config (setq lsp-ui-doc-enable nil
-                  lsp-ui-doc-use-childframe t
-                  lsp-ui-doc-position 'top
-                  lsp-ui-doc-include-signature t
-                  lsp-ui-sideline-enable nil
-                  lsp-ui-flycheck-enable t
-                  lsp-ui-flycheck-list-position 'right
-                  lsp-ui-flycheck-live-reporting nil
-                  lsp-ui-peek-enable nil
-                  lsp-ui-peek-list-width 60
-                  lsp-ui-peek-peek-height 25
-                  ))
-
-  (use-package lsp-treemacs
-    :commands lsp-treemacs-errors-list)
-
-  (use-package lsp-jedi
-    :ensure t
-    :config
-    (with-eval-after-load "lsp-mode"
-      (add-to-list 'lsp-disabled-clients 'pyls)
-      (add-to-list 'lsp-enabled-clients 'jedi)))
+  (use-package eglot
+    :config (define-key eglot-mode-map (kbd "C-c h") 'eldoc))
 #+END_SRC
 
 Solidity language mode:
@@ -703,35 +650,34 @@ Solidity language mode:
 
 Rust language mode:
 #+BEGIN_SRC emacs-lisp
-  (use-package rust-mode
+  (use-package rustic
     :config
-    (add-hook 'racer-mode-hook #'eldoc-mode)
-    (add-hook 'racer-mode-hook #'company-mode)
-    (define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
-    (setq rust-format-on-save t)
-    (setq rust-indent-offset 4))
-
-  (use-package cargo-mode
-    :config
-    (add-hook 'rust-mode-hook 'cargo-minor-mode))
-
-  (provide 'init-rust-mode)
+    (setq
+     ;; eglot seems to be the best option right now.
+     rustic-lsp-client 'eglot
+     rustic-format-trigger 'on-save
+     ;; Prevent automatic syntax checking, which was causing lags and stutters.
+     eglot-send-changes-idle-time (* 60 60)))
 #+END_SRC
 
 Syntax checking with flycheck:
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck
     :init (global-flycheck-mode)
-    :after lsp-mode)
+    :config (setq flycheck-flake8rc ".flake8")
+    :after eglot)
 
   (use-package flycheck-pycheckers
-    :after flycheck)
+    :after flycheck
+    :config (setq flycheck-pycheckers-checkers '(flake8 mypy3)))
+
   (with-eval-after-load 'flycheck
     (add-hook 'flycheck-mode-hook #'flycheck-pycheckers-setup))
 
   (use-package flycheck-rust)
   (push 'rustic-clippy flycheck-checkers)
   (setq rustic-flycheck-clippy-params "--message-format=json")
+
   (with-eval-after-load 'rustic-mode
     (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 

@@ -1,6 +1,6 @@
 # Lines configured by zsh-newuser-install
 HISTFILE=~/.zshhistory
-HISTSIZE=5000
+HISTSIZE=7500
 SAVEHIST=5000
 bindkey -e
 # End of lines configured by zsh-newuser-install
@@ -23,9 +23,13 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
+# Firefox Wayland
+if [[ "$XDG_SESSION_TYPE" == "wayland" ]] ; then
+    export MOZ_ENABLE_WAYLAND=1
+fi
+
 export EDITOR="emacsclient -c -a \"emacs\""
 export GPG_TTY=$(tty)
-export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 
 # Rust paths
 export PATH="$HOME/.cargo/bin:$PATH"
