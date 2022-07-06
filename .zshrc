@@ -55,6 +55,7 @@ alias ls="exa -l"
 alias cat="bat"
 alias gh-login="bw get item 'GitHub' | jq -r '.fields[1].value' | gh auth login --with-token"
 alias config="git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME"
+alias s="kitty +kitten ssh"
 
 # Startup starship prompt
 eval "$(starship init zsh)"
