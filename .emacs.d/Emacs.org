@@ -586,6 +586,7 @@ Deft for org files:
 
    (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
    (add-hook 'python-mode-hook 'eldoc-mode)
+   (add-hook 'python-mode-hook 'eglot-ensure)
 #+END_SRC
 
 Arduino mode:
@@ -608,7 +609,9 @@ Dockerfile mode:
 Groovy language mode:
 #+BEGIN_SRC emacs-lisp
   (use-package groovy-mode
-    :config (setq groovy-indent-offset 2))
+    :config (add-to-list 'auto-mode-alist '("Jenkinsfile\\'" . groovy-mode))
+    (add-to-list 'auto-mode-alist '("\\.jenkinsfile\\'" . groovy-mode))
+    (setq groovy-indent-offset 2))
 #+END_SRC
 
 Markdown mode:
@@ -639,7 +642,7 @@ Language server protocol for auto-completion with company-mode:
     (define-key company-active-map (kbd "M->") 'company-select-last))
 
   (use-package eglot
-    :config (define-key eglot-mode-map (kbd "C-c h") 'eldoc))
+    :config (define-key eglot-mode-map (kbd "C-c h") 'eldoc-mode))
 #+END_SRC
 
 Solidity language mode:
@@ -651,7 +654,7 @@ Solidity language mode:
 Rust language mode:
 #+BEGIN_SRC emacs-lisp
   (use-package rustic
-    :config
+    :config (add-hook 'rustic-mode 'eglot-ensure)
     (setq
      ;; eglot seems to be the best option right now.
      rustic-lsp-client 'eglot
