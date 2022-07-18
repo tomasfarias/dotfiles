@@ -1,0 +1,112 @@
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "MonoLisa", mono;
+    font-size: 16px;
+    font-weight: normal;
+    min-height: 0;
+    min-width: 0;
+    margin: 0px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+@import "gruvbox.css";
+
+window#waybar {
+    background: rgba(40, 40, 40, 0.8);
+    color: @fg;
+}
+
+window#waybar.empty {
+    background: rgba(40, 40, 40, 0.8);
+    padding: 0px;
+    border-radius: 0px;
+}
+
+window#waybar.hidden {
+    background: transparent;
+    padding: 0px;
+    border-radius: 0px;
+}
+
+#waybar.empty #window {
+    background: transparent;
+    padding: 0px;
+    border-radius: 0px;
+}
+
+#window {
+    background: transparent;
+    font-family: "MonoLisa", mono;
+    color: @fg;
+    padding: 0 5px;
+    border-radius: 3px;
+}
+
+#workspaces button {
+    background: transparent;
+    padding: 0 10px;
+    margin-right: 0px;
+    margin-left: 5px;
+    border-radius: 3px;
+    color: @fg;
+}
+
+#workspaces button.visible {
+    background: transparent;
+}
+
+#workspaces button.focused {
+    background: #b8bb26;
+    color: @bg;
+}
+
+#tray {
+    padding: 0 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    color: @fg;
+    border-radius: 3px;
+}
+
+#temperature, #clock, #battery, #cpu, #memory, #network, #pulseaudio {
+    padding: 0 5px;
+    margin-right: 5px;
+    color: @fg;
+    border-radius: 3px;
+}
+
+#temperature.critical, #cpu.high, #memory.high, #network.disconnected, #battery.critical:not(.charging) {
+    animation-name: blink-critical;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#cpu.medium, #memory.medium, #battery.warning:not(.charging) {
+    animation-name: blink-warning;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#battery.charging, #battery.full {
+    background: #b8bb26;
+}
+
+@keyframes blink-critical {
+    to {
+        background-color: #fb4933;
+        color: #1c1c1c;
+    }
+}
+
+@keyframes blink-warning {
+    to {
+        background-color: #fabd2f;
+        color: #1c1c1c;
+    }
+}

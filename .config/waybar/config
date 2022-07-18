@@ -1,0 +1,125 @@
+{
+    "layer": "top",
+    "position": "top",
+    "modules-left": ["sway/workspaces", "sway/mode"],
+    "modules-center": ["sway/window"],
+    "modules-right": ["tray", "pulseaudio", "pulseaudio#mic", "network", "cpu", "memory", "temperature", "clock#date", "clock#time"],
+    "sway/workspaces": {
+        "disable-scroll": true,
+        "format": "{icon}",
+        "format-icons": {
+            "1": ""
+        },
+        "disable-scroll": true,
+        "disable-click": true,
+            "persistent_workspaces": {
+                "1": ["DP-1"],
+                "2": ["DP-1"]
+        }
+    },
+    "sway/mode": {
+        "format": "{name}"
+    },
+    "sway/window": {
+        "max-length": 80,
+        "tooltip": false,
+        "all-outputs": false,
+        "icon": true
+    },
+    "tray": {
+        "spacing": 10,
+        "icon-size": 18
+    },
+    "clock#date": {
+        "format": " {:%A %Y-%m-%d}",
+        "on-click": "$HOME/.local/bin/eww update calendar-visible=true && $HOME/.local/bin/eww open calendar"
+    },
+    "clock#time": {
+        "format": " {:%R}"
+    },
+    "cpu": {
+        "format": "",
+        "format-medium": " {usage}%",
+        "format-high": " {usage}%",
+        "format-alt": " {usage}%",
+        "format-alt-click": "click-right",
+        "states": {
+            "low": 30,
+            "medium": 60,
+            "high": 90
+        }
+    },
+    "memory": {
+        "format": "",
+        "format-medium": " {}%",
+        "format-high": " {}%",
+        "format-alt": " {used:0.1f}G/{total:0.1f}G",
+        "format-alt-click": "click-right",
+        "states": {
+            "low": 30,
+            "medium": 60,
+            "high": 90
+        }
+    },
+    "temperature": {
+      "critical-threshold": 80,
+      "interval": 5,
+      "format": "{icon} {temperatureC}°C",
+      "format-icons": [
+          "",
+          "",
+          "",
+          "",
+          ""
+      ],
+      "tooltip": true
+    },
+    "battery": {
+        "bat": "BAT0",
+        "full-at": 100,
+        "states": {
+            "good": 100,
+            "warning": 50,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-icons": ["", "", "", "", ""]
+    },
+    "network": {
+        "format": "{icon}",
+        "format-alt": "{icon} {ipaddr}/{cidr}",
+        "format-alt-click": "click-right",
+        "format-icons": {
+            "wifi": [""],
+            "ethernet": [""],
+            "disconnected": ["⚠"]
+        }
+    },
+    "pulseaudio": {
+        "format": "{icon}",
+        "format-alt": "{icon} {volume}%",
+        "format-alt-click": "click-right",
+        "format-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "headset": "",
+            "default": ["", "", ""]
+        },
+        "on-click": "pavucontrol",
+        "scroll-step": 10
+    },
+    "pulseaudio#mic": {
+        "format": "{icon}",
+        "format-alt": "{format_source}",
+        "format-alt-click": "click-right",
+        "format-source": " {volume}%",
+        "format-source-muted": "",
+        "format-icons": {
+            "default": ["", ""]
+        },
+        "on-click": "pavucontrol",
+        "on-click-middle": "pactl set-source-mute @DEFAULT_SOURCE@ toggle",
+        "on-scroll-down": "pactl set-source-volume @DEFAULT_SOURCE@ -1%",
+        "on-scroll-up": "pactl set-source-volume @DEFAULT_SOURCE@ +1%"
+    }
+}
