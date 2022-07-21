@@ -8,7 +8,10 @@
         "disable-scroll": true,
         "format": "{icon}",
         "format-icons": {
-            "1": ""
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
         },
         "disable-scroll": true,
         "disable-click": true,
@@ -109,7 +112,7 @@
         "scroll-step": 10
     },
     "pulseaudio#mic": {
-        "format": "{icon}",
+        "format": "{format_source}",
         "format-alt": "{format_source}",
         "format-alt-click": "click-right",
         "format-source": " {volume}%",
