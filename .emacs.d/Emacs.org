@@ -450,6 +450,7 @@ Install org-roam:
                                         :unnarrowed t
                                         :immediate-finish t))
           time-stamp-start "#\\+lastmod: [\t]*"))
+
   (use-package org-roam-ui
     :after org-roam
     :straight
@@ -486,7 +487,7 @@ Bibliography and references:
 
   (use-package org-roam-bibtex
     :straight t
-    :after org-roam
+    :after (org-roam ivy-bibtex)
     :config (require 'org-ref) (require 'org-ref-ivy)
     (setq orb-preformat-templates t
           orb-preformat-keywords
@@ -494,11 +495,21 @@ Bibliography and references:
           org-roam-bibtex-preformat-keywords
           '("=key=" "title" "url" "doi" "author-or-editor" "keywords" "year" "citekey" "fullcite")))
 
+  (add-hook 'bibtex-mode-hook 'flyspell-mode)
+  (setq bibtex-user-optional-fields '(("keywords" "Keywords to describe the entry" "")
+                                      ("file" "Link to document file." ":"))
+        bibtex-align-at-equal-sign t)
+
   (use-package ivy-bibtex
     :config
-    (setq ivy-re-builders-alist
-          '((ivy-bibtex . ivy--regex-ignore-order)
-            (t . ivy--regex-plus))))
+    (setq ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
+                                  (t . ivy--regex-plus))
+          bibtex-completion-bibliography (concat org-directory "bibliography/references.bib")
+          bibtex-completion-pdf-field "File"
+          bibtex-completion-notes-path (concat org-directory "notes")
+          bibtex-completion-additional-search-fields '(keywords))
+    :bind
+    (("C-c n B" . ivy-bibtex)))
 
   (setq org-ref-insert-link-function 'org-ref-insert-link-hydra/body
         org-ref-insert-cite-function 'org-ref-cite-insert-ivy
@@ -510,7 +521,7 @@ Bibliography and references:
     :straight t
     :after org-roam
     :custom
-    (org-cite-global-bibliography '("~/src/github.com/tomasfarias/org/bibliography/references.bib"))
+    (org-cite-global-bibliography (concat org-directory "bibliography/references.bib"))
     (org-cite-insert-processor 'citar)
     (org-cite-follow-processor 'citar)
     (org-cite-activate-processor 'citar)
@@ -524,6 +535,8 @@ Bibliography and references:
     ;; optional: org-cite-insert is also bound to C-c C-x C-@
     :bind
     (:map org-mode-map :package org ("C-c n b" . #'org-cite-insert)))
+
+  (org-roam-bibtex-mode)
 #+END_SRC
 
 Deft for org files:
