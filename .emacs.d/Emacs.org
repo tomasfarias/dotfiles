@@ -598,8 +598,7 @@ Deft for org files:
                (setq whitespace-style '(face empty trailing indentation::space))))
 
    (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
-   (add-hook 'python-mode-hook 'eldoc-mode)
-   (add-hook 'python-mode-hook 'eglot-ensure)
+   (add-hook 'python-mode-hook #'eglot-ensure)
 #+END_SRC
 
 Arduino mode:
@@ -655,7 +654,14 @@ Language server protocol for auto-completion with company-mode:
     (define-key company-active-map (kbd "M->") 'company-select-last))
 
   (use-package eglot
-    :config (define-key eglot-mode-map (kbd "C-c h") 'eldoc-mode))
+    :config (define-key eglot-mode-map (kbd "C-c h") 'eldoc-box-eglot-help-at-point))
+
+  (setq eldoc-echo-area-prefer-doc-buffer t)
+  (setq eldoc-idle-delay 3)
+  (setq eldoc-echo-area-use-multiline-p 5)
+
+  (use-package eldoc-box)
+  (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
 #+END_SRC
 
 Solidity language mode:
