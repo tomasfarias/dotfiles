@@ -114,6 +114,8 @@ Attempt to set fonts:
   (custom-theme-set-faces
    'user
    '(org-block                 ((t (:inherit fixed-pitch))))
+   '(org-code                  ((t (:inherit fixed-pitch :foreground "#b8bb26"))))
+   '(org-link                  ((t (:inherit variable-pitch :foreground "#458588" :underline t))))
    '(org-table                 ((t (:inherit fixed-pitch))))
    '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
    '(org-property-value        ((t (:inherit fixed-pitch))) t)
@@ -301,6 +303,7 @@ The org itself:
   (use-package org
     :init
     (setq org-use-speed-commands t
+          org-use-sub-superscripts "{}"
           org-return-follows-link t
           org-hide-emphasis-markers t
           org-completion-use-ido t
@@ -316,7 +319,7 @@ The org itself:
                                    "~/src/github.com/tomasfarias/org/notes"))
           org-agenda-span 10
           org-agenda-start-on-weekday 1
-          org-agenda-include-diary nil
+          org-agenda-include-diary t
           org-agenda-window-setup 'current-window
           org-agenda-skip-scheduled-if-done nil
           org-agenda-compact-blocks t
@@ -373,7 +376,6 @@ The org itself:
     (org-journal-date-format "%A, %d %B %Y")
     (org-journal-enable-agenda-integration t))
 #+END_SRC
-
 
 Set-up org-capture templates:
 
