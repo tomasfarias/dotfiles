@@ -2,8 +2,8 @@ clock
 
 effect-blur=10x10
 fade-in=1
-font=monospace
-font-size=14
+font=MonoLisa
+font-size=20
 grace=10
 image=$HOME/Pictures/backgrounds/gruvboxarch.1920x1080.png
 
@@ -16,17 +16,25 @@ indicator-radius=160
 indicator-thickness=20
 
 inside-color=282828cc
-inside-ver-color=458588cc
-inside-caps-lock-color=928374cc
+inside-ver-color=282828cc
+inside-caps-lock-color=282828cc
 inside-clear-color=282828cc
-inside-wrong-color=cc241dcc
+inside-wrong-color=282828cc
 
 key-hl-color=98971acc
 
 text-color=ebdbb2ff
-text-clear-color=98971aff
+text-clear-color=ebdbb2ff
+text-wrong-color=ebdbb2ff
+text-ver-color=ebdbb2ff
+text-caps-lock-color=ebdbb2ff
 
 ring-color=282828ff
+ring-clear-color=ebdbb2ff
+ring-wrong-color=cc241dff
+ring-ver-color=d79921ff
+ring-caps-lock-color=282828ff
+
 separator-color=282828cc
 
 line-uses-ring
