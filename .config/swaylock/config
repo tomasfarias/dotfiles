@@ -3,17 +3,17 @@ clock
 effect-blur=10x10
 fade-in=1
 font=MonoLisa
-font-size=20
+font-size=16
 grace=10
-image=$HOME/Pictures/backgrounds/gruvboxarch.1920x1080.png
+image=$HOME/Pictures/coffee-cat-gruvbox-3440x1440.png
 
 ignore-empty-password
 
 indicator-caps-lock
 indicator-idle-visible
 
-indicator-radius=160
-indicator-thickness=20
+indicator-radius=128
+indicator-thickness=24
 
 inside-color=282828cc
 inside-ver-color=282828cc

@@ -3,14 +3,13 @@
 #+ AUTHOR: Tomás Farías Santana
 
 * General settings
-
 Enable syntax-highlighting for all buffers:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (global-font-lock-mode t)
 #+END_SRC
 
 Ensure environment variables (like PATH) are loaded from SHELL:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package exec-path-from-shell)
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize))
@@ -19,7 +18,7 @@ Ensure environment variables (like PATH) are loaded from SHELL:
 #+END_SRC
 
 Disable many things:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (when (functionp 'menu-bar-mode)
     (menu-bar-mode -1))
   (when (functionp 'set-scroll-bar-mode)
@@ -37,7 +36,7 @@ Disable many things:
 #+END_SRC
 
 Backup files in system's temp directory:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (setq backup-directory-alist
         `((".*" . ,temporary-file-directory)))
   (setq auto-save-file-name-transforms
@@ -45,12 +44,12 @@ Backup files in system's temp directory:
 #+END_SRC
 
 Shorter yes/no:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (defalias 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
 Ensure UTF-8 everywhere:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (prefer-coding-system 'utf-8)
   (set-default-coding-systems 'utf-8)
   (set-terminal-coding-system 'utf-8)
@@ -59,50 +58,49 @@ Ensure UTF-8 everywhere:
 #+END_SRC
 
 * Aesthetics
-
 Set up gruvbox theme:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent :results output silent
   (use-package gruvbox-theme
-    :config (load-theme 'gruvbox-dark-hard t))
+    :config (load-theme 'gruvbox-dark-medium t))
 #+END_SRC
 
 Doom-modeline:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package all-the-icons)
   (use-package doom-modeline
     :init (doom-modeline-mode 1))
 #+END_SRC
 
 Ensure line and column numbers:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (line-number-mode 1)
   (column-number-mode 1)
 #+END_SRC
 
 Hide the mouse while typing:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (setq make-pointer-invisible t)
 #+END_SRC
 
 Scrolling smoothly:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package smooth-scrolling
     :init (smooth-scrolling-mode 1))
 #+END_SRC
 
 Transparency (requires native Wayland):
-#+BEGIN_SRC emacs-lisp
-  (set-frame-parameter (selected-frame) 'alpha-background 85) ; For current frame
-  (add-to-list 'default-frame-alist '(alpha-background . 85)) ; For all new frames henceforth
+#+BEGIN_SRC emacs-lisp :results output silent
+  (set-frame-parameter (selected-frame) 'alpha-background 90) ; For current frame
+  (add-to-list 'default-frame-alist '(alpha-background . 90)) ; For all new frames henceforth
 #+END_SRC
 
 By default, do not indent with tabs:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (setq-default indent-tabs-mode nil)
 #+END_SRC
 
 Attempt to set fonts:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (when (member "MonoLisa-Regular" (font-family-list))
     (set-frame-font "MonoLisa-Regular-13:Regular" t t))
 
@@ -113,9 +111,9 @@ Attempt to set fonts:
 
   (custom-theme-set-faces
    'user
-   '(org-block                 ((t (:inherit fixed-pitch))))
-   '(org-code                  ((t (:inherit fixed-pitch :foreground "#b8bb26"))))
-   '(org-link                  ((t (:inherit variable-pitch :foreground "#458588" :underline t))))
+   '(org-block                 ((t (:inherit fixed-pitch :background "#32302f"))))
+   '(org-code                  ((t (:inherit fixed-pitch :background "#32302f"))))
+   '(org-link                  ((t (:inherit variable-pitch :foreground "#076678" :underline t))))
    '(org-table                 ((t (:inherit fixed-pitch))))
    '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
    '(org-property-value        ((t (:inherit fixed-pitch))) t)
@@ -125,12 +123,12 @@ Attempt to set fonts:
 #+END_SRC
 
 Display line numbers everywhere:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (global-display-line-numbers-mode)
 #+END_SRC
 
 Customize my EMACS Dashboard:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package page-break-lines)
 
   (use-package dashboard
@@ -149,9 +147,94 @@ Customize my EMACS Dashboard:
 #+END_SRC
 
 * Productivity modes
+Lisp and browsing:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package sly
+    :straight (:host github :repo "joaotavora/sly" :branch "master")
+    :config (setq inferior-lisp-program "sbcl"))
+
+  (setq browse-url-browser-function 'eww-browse-url)
+
+  (require 'cl-lib)
+
+  (defun eww-tag-pre (dom)
+    (let ((shr-folding-mode 'none)
+          (shr-current-font 'default))
+      (shr-ensure-newline)
+      (insert (eww-fontify-pre dom))
+      (shr-ensure-newline)))
+
+  (defun eww-fontify-pre (dom)
+    (with-temp-buffer
+      (shr-generic dom)
+      (let ((mode (eww-buffer-auto-detect-mode)))
+        (when mode
+          (eww-fontify-buffer mode)))
+      (buffer-string)))
+
+  (defun eww-fontify-buffer (mode)
+    (delay-mode-hooks (funcall mode))
+    (font-lock-default-function mode)
+    (font-lock-default-fontify-region (point-min)
+                                      (point-max)
+                                      nil))
+
+  (defun eww-buffer-auto-detect-mode ()
+    (let* ((map '((ada ada-mode)
+                  (awk awk-mode)
+                  (c c-mode)
+                  (cpp c++-mode)
+                  (clojure clojure-mode lisp-mode)
+                  (csharp csharp-mode java-mode)
+                  (css css-mode)
+                  (dart dart-mode)
+                  (delphi delphi-mode)
+                  (emacslisp emacs-lisp-mode)
+                  (erlang erlang-mode)
+                  (fortran fortran-mode)
+                  (fsharp fsharp-mode)
+                  (go go-mode)
+                  (groovy groovy-mode)
+                  (haskell haskell-mode)
+                  (html html-mode)
+                  (java java-mode)
+                  (javascript javascript-mode)
+                  (json json-mode javascript-mode)
+                  (latex latex-mode)
+                  (lisp lisp-mode)
+                  (lua lua-mode)
+                  (matlab matlab-mode octave-mode)
+                  (objc objc-mode c-mode)
+                  (perl perl-mode)
+                  (php php-mode)
+                  (prolog prolog-mode)
+                  (python python-mode)
+                  (r r-mode)
+                  (ruby ruby-mode)
+                  (rust rust-mode)
+                  (scala scala-mode)
+                  (shell shell-script-mode)
+                  (smalltalk smalltalk-mode)
+                  (sql sql-mode)
+                  (swift swift-mode)
+                  (visualbasic visual-basic-mode)
+                  (xml sgml-mode)))
+           (language (language-detection-string
+                      (buffer-substring-no-properties (point-min) (point-max))))
+           (modes (cdr (assoc language map)))
+           (mode (cl-loop for mode in modes
+                          when (fboundp mode)
+                          return mode)))
+      (message (format "%s" language))
+      (when (fboundp mode)
+        mode)))
+
+  (setq shr-external-rendering-functions
+        '((pre . eww-tag-pre)))
+#+END_SRC
 
 Magit:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
     :config (global-set-key (kbd "C-c g") 'magit-file-dispatch))
 
@@ -162,7 +245,7 @@ Magit:
 #+END_SRC
 
 Projectile:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
    (use-package projectile
     :diminish projectile-mode
     :init
@@ -172,7 +255,7 @@ Projectile:
 #+END_SRC
 
 Treemacs mode for file and project exploring:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package treemacs
     :config
     (progn
@@ -204,7 +287,7 @@ Treemacs mode for file and project exploring:
 #+END_SRC
 
 Undo-tree with undo and redo bindings:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package undo-tree
     :config (global-undo-tree-mode 1)
     (global-set-key (kbd "C-z") 'undo)
@@ -214,7 +297,7 @@ Undo-tree with undo and redo bindings:
 #+END_SRC
 
 Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package ivy
     :config
     (global-set-key (kbd "C-x b") 'ivy-switch-buffer)
@@ -242,20 +325,18 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
 #+END_SRC
 
 Whitespace management:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (global-set-key (kbd "C-c w w") 'whitespaceg-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 
 Rainbows:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package rainbow-delimiters)
 #+END_SRC
 
 Multiple cursors:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package multiple-cursors
     :config (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
     (global-set-key (kbd "C->") 'mc/mark-next-like-this)
@@ -264,7 +345,7 @@ Multiple cursors:
 #+END_SRC
 
 Snippet management:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package yasnippet
     :straight t
     :config
@@ -277,10 +358,8 @@ Snippet management:
 #+END_SRC
 
 * Everything org
-
 Set base org directory and default notes file:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (defconst org-directory "~/src/github.com/tomasfarias/org/"
     "org-mode directory and repo, where most of the org-mode file lives")
   (defconst org-projects-dir (expand-file-name "projects" org-directory)
@@ -298,8 +377,25 @@ Set base org directory and default notes file:
 #+END_SRC
 
 The org itself:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun agenda-skip-subtree-if-priority (priority)
+    "Skip an agenda subtree if it has a priority of PRIORITY.
 
-#+BEGIN_SRC emacs-lisp
+        PRIORITY may be one of the characters ?A, ?B, or ?C."
+    (let ((subtree-end (save-excursion (org-end-of-subtree t)))
+          (pri-value (* 1000 (- org-lowest-priority priority)))
+          (pri-current (org-get-priority (thing-at-point 'line t))))
+      (if (= pri-value pri-current)
+          subtree-end
+        nil)))
+
+  (defun agenda-skip-subtree-if-habit ()
+    "Skip an agenda entry if it has a STYLE property equal to \"habit\"."
+    (let ((subtree-end (save-excursion (org-end-of-subtree t))))
+      (if (string= (org-entry-get nil "STYLE") "habit")
+          subtree-end
+        nil)))
+
   (use-package org
     :init
     (setq org-use-speed-commands t
@@ -320,14 +416,27 @@ The org itself:
           org-agenda-span 10
           org-agenda-start-on-weekday 1
           org-agenda-include-diary t
-          org-agenda-window-setup 'current-window
+          org-agenda-window-setup 'reorganize-frame
           org-agenda-skip-scheduled-if-done nil
           org-agenda-compact-blocks t
           org-agenda-sticky t
+          org-agenda-custom-commands
+          '(("d" "Daily agenda and all TODOs"
+             ((tags "PRIORITY=\"A\""
+                    ((org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                     (org-agenda-overriding-header "High-priority unfinished tasks:")))
+              (agenda "" ((org-agenda-ndays 1)))
+              (alltodo ""
+                       ((org-agenda-skip-function '(or (agenda-skip-subtree-if-habit)
+                                                       (agenda-skip-subtree-if-priority ?A)
+                                                       (org-agenda-skip-if nil '(scheduled deadline))))
+                        (org-agenda-overriding-header "ALL normal priority tasks:"))))
+             ((org-agenda-compact-blocks t))))
           org-super-agenda-header-separator ""
           org-todo-keywords
-          (quote ((sequence "TODO(t)" "PROG(p)" "|" "DONE(d)")
-                  (sequence "WAITING(w@/!)" "|" "CANCELLED(c@/!)"))))
+          (quote ((sequence "TODO(t)" "IN-PROGRESS(p)" "|" "DONE(d)")
+                  (sequence "WAITING(w@/!)" "|" "CANCELLED(c@/!)")))
+          )
 
     (add-to-list 'auto-mode-alist '("\\.txt\\'" . org-mode))
     (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
@@ -335,7 +444,6 @@ The org itself:
     :bind (("C-c o l" . org-store-link)
            ("C-c o r r" . org-refile)
            ("C-c o a a" . org-agenda)
-           ("<f9>" . org-agenda)
            ("C-c o s" . org-sort)
            ("C-c o c" . org-capture)
            ("C-M-|" . indent-rigidly))
@@ -354,13 +462,11 @@ The org itself:
     :config
     (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
 
-  (use-package slime
-    :config (setq inferior-lisp-program "sbcl"))
-
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((lisp . t)
-     (emacs-lisp . t)
+     (emacs-lisp :results output silent . t)
+     (latex . t)
      (python . t)))
 
   (use-package org-super-agenda
@@ -375,11 +481,10 @@ The org itself:
     (org-journal-dir org-journal-dir)
     (org-journal-date-format "%A, %d %B %Y")
     (org-journal-enable-agenda-integration t))
-#+END_SRC
+            #+END_SRC
 
 Set-up org-capture templates:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (defun org-journal-find-location ()
     ;; Open today's journal, but specify a non-nil prefix argument in order to
     ;; inhibit inserting the heading; org-capture will insert the heading.
@@ -404,8 +509,7 @@ Set-up org-capture templates:
 #+END_SRC
 
 Install org-roam:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package org-roam
     :init (setq org-roam-v2-ack t)
     :bind (("C-c n l" . org-roam-buffer-toggle)
@@ -465,13 +569,12 @@ Install org-roam:
 #+END_SRC
 
 Bibliography and references:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (setq bibtex-completion-bibliography (list (concat org-directory "bibliography/references.bib"))
         bibtex-completion-library-path (concat org-directory "bibliography/pdfs/")
-        bibtex-completion-notes-path (concat org-directory "notes/")
+        bibtex-completion-notes-path (concat org-directory "notes")
         org-bibtex-file (list (concat org-directory "bibliography/references.bib"))
-        bibtex-completion-notes-template-multiple-files "#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+DATE: %U\n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n:PROPERTIES:\n:ID: ${id}\n:Custom_ID: ${=key=}\n:AUTHOR: ${author-or-editor}\n:ROAM_REFS: ${citekey}\n:BTYPE: \n:YEAR: ${year}:END:")
+        bibtex-completion-notes-template-multiple-files ":PROPERTIES:\n:ID: ${id}\n:Custom_ID: ${=key=}\n:AUTHOR: ${author-or-editor}\n:ROAM_REFS: ${citekey}\n:BTYPE: \n:YEAR: ${year}\n:END:\n#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+DATE: %U\n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n")
 
   (setq bibtex-completion-display-formats
         '((article       . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${journal:40}")
@@ -542,8 +645,7 @@ Bibliography and references:
 #+END_SRC
 
 Deft for org files:
-
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package deft
     :after org
     :bind
@@ -560,25 +662,30 @@ Deft for org files:
 #+END_SRC
 
 * IRC with ERC
+Set nickname, real-name, setup SASL, and define a function to connect to [[irc.libera.chat]]:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq
+   erc-nick "tomasfarias"
+   erc-server-auto-reconnect t
+   erc-server-reconnect-timeout 15)
 
- Set nickname, real-name, and define a function to connect to [[irc.libera.chat]].
-
- #+BEGIN_SRC emacs-lisp
-   (setq
-    erc-nick "tomasfarias"
-    erc-user-full-name "Tomás Farías")
-
-   (defun erc-libera-start ()
-     (lambda ()
-       (interactive)
-       (erc :server "irc.libera.chat"
-            :port   "6667")))
+  (defun erc-libera-start ()
+    (interactive)
+    (erc-tls
+     :server "irc.libera.chat"
+     :port 6697
+     :nick "tomasfarias"
+     :full-name "Tomás Farías")
+    (erc
+     :server "irc.libera.chat"
+     :port 6667
+     :nick "tomasfarias"
+     :full-name "Tomás Farías"))
  #+END_SRC
 
 * Language modes
-
  Python language mode settings:
- #+BEGIN_SRC emacs-lisp
+ #+BEGIN_SRC emacs-lisp :results output silent
    (use-package pyvenv
      :ensure t
      :init
@@ -604,24 +711,24 @@ Deft for org files:
 #+END_SRC
 
 Arduino mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package arduino-mode
     :after flycheck)
 #+END_SRC
 
 Terraform language mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package terraform-mode)
 #+END_SRC
 
 Dockerfile mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package dockerfile-mode
     :config (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode)))
 #+END_SRC
 
 Groovy language mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package groovy-mode
     :config (add-to-list 'auto-mode-alist '("Jenkinsfile\\'" . groovy-mode))
     (add-to-list 'auto-mode-alist '("\\.jenkinsfile\\'" . groovy-mode))
@@ -629,21 +736,24 @@ Groovy language mode:
 #+END_SRC
 
 Markdown mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package markdown-mode
-    :mode ("README\\.md\\'" . gfm-mode)
+    :mode ("\\.md\\'" . gfm-mode)
     :init (setq markdown-command "multimarkdown"))
+
+  (use-package poly-markdown
+    :config (add-to-list 'auto-mode-alist '("\\.md" . poly-markdown-mode)))
 #+END_SRC
 
 YAML mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package yaml-mode
     :mode ("\\.yml\\'" . yaml-mode)
     ("\\.yaml\\'" . yaml-mode))
 #+END_SRC
 
 Language server protocol for auto-completion with company-mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package company
     :config (add-hook 'after-init-hook 'global-company-mode)
     (setq company-idle-delay 1)
@@ -667,13 +777,18 @@ Language server protocol for auto-completion with company-mode:
 #+END_SRC
 
 Solidity language mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package solidity-mode
     :config (setq solidity-comment-style 'slash))
 #+END_SRC
 
+Go language mode:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package go-mode)
+#+END_SRC
+
 Rust language mode:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package rustic
     :config (add-hook 'rustic-mode 'eglot-ensure)
     (setq
@@ -685,7 +800,7 @@ Rust language mode:
 #+END_SRC
 
 Syntax checking with flycheck:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package flycheck
     :init (global-flycheck-mode)
     :config (setq flycheck-flake8rc ".flake8")
