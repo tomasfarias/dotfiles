@@ -11,10 +11,16 @@ Enable syntax-highlighting for all buffers:
 Ensure environment variables (like PATH) are loaded from SHELL:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package exec-path-from-shell)
-  (when (memq window-system '(mac ns x))
+
+  (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
+    (add-to-list 'exec-path-from-shell-variables var))
+
+  (when (memq window-system '(mac ns x pgtk))
     (exec-path-from-shell-initialize))
   (when (daemonp)
     (exec-path-from-shell-initialize))
+
+  (setq-default explicit-shell-file-name "/bin/zsh")
 #+END_SRC
 
 Disable many things:
@@ -58,17 +64,41 @@ Ensure UTF-8 everywhere:
 #+END_SRC
 
 * Aesthetics
-Set up gruvbox theme:
+Manage Emacs theme with ~doom-themes~:
 #+BEGIN_SRC emacs-lisp :results output silent :results output silent
-  (use-package gruvbox-theme
-    :config (load-theme 'gruvbox-dark-medium t))
+  (use-package solaire-mode
+    ;; Darkens "support" buffers (those not opening a file) to help distinguish them
+    :config (solaire-global-mode +1))
+
+  (use-package doom-themes
+    :config
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+          doom-themes-enable-italic nil) ; if nil, italics is universally disabled
+    (load-theme 'doom-gruvbox t)
+
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
+    ;; or for treemacs users
+    (setq doom-themes-treemacs-theme "doom-colors") ; use "doom-colors" for less minimal icon theme
+    (doom-themes-treemacs-config)
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
 #+END_SRC
+
+Although I'm currently in love with Gruvbox, I like to swap things around from time to time, and ~doom-themes~ bundles up a lot of great themes for me to try.
 
 Doom-modeline:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package all-the-icons)
   (use-package doom-modeline
-    :init (doom-modeline-mode 1))
+    :init (doom-modeline-mode 1)
+    :config (setq doom-modeline-height 35))
+
+  (custom-set-faces
+   '(mode-line ((t (:family "MonoLisa"))))
+   '(mode-line-active ((t (:family "MonoLisa" :weight bold :height 100))))
+   '(mode-line-inactive ((t (:family "MonoLisa" :height 100)))))
 #+END_SRC
 
 Ensure line and column numbers:
@@ -111,9 +141,9 @@ Attempt to set fonts:
 
   (custom-theme-set-faces
    'user
-   '(org-block                 ((t (:inherit fixed-pitch :background "#32302f"))))
-   '(org-code                  ((t (:inherit fixed-pitch :background "#32302f"))))
-   '(org-link                  ((t (:inherit variable-pitch :foreground "#076678" :underline t))))
+   '(org-block                 ((t (:inherit fixed-pitch))))
+   '(org-code                  ((t (:inherit fixed-pitch))))
+   '(org-link                  ((t (:inherit variable-pitch :underline t))))
    '(org-table                 ((t (:inherit fixed-pitch))))
    '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
    '(org-property-value        ((t (:inherit fixed-pitch))) t)
@@ -233,6 +263,14 @@ Lisp and browsing:
         '((pre . eww-tag-pre)))
 #+END_SRC
 
+Ace window allows me to visually change windows as an alternative to ~C-x o~ :
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package ace-window
+    :config (global-set-key (kbd "M-o") 'ace-window))
+#+END_SRC
+
+
+
 Magit:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
@@ -246,7 +284,7 @@ Magit:
 
 Projectile:
 #+BEGIN_SRC emacs-lisp :results output silent
-   (use-package projectile
+  (use-package projectile
     :diminish projectile-mode
     :init
     (setq projectile-keymap-prefix (kbd "C-c p"))
@@ -256,34 +294,38 @@ Projectile:
 
 Treemacs mode for file and project exploring:
 #+BEGIN_SRC emacs-lisp :results output silent
-  (use-package treemacs
-    :config
-    (progn
-      (treemacs-follow-mode t)
-      (treemacs-filewatch-mode t)
-      (treemacs-fringe-indicator-mode 'always)
-      (pcase (cons (not (null (executable-find "git")))
-                   (not (null treemacs-python-executable)))
-        (`(t . t)
-         (treemacs-git-mode 'deferred))
-        (`(t . _)
-         (treemacs-git-mode 'simple))))
-    :bind (:map global-map
-                ("<f8>" . treemacs)
-                ("C-c t t" . treemacs)
-                ("C-c t c" . treemacs-collapse-project)
-                ("C-c t s" . treemacs-switch-workspace)
-                ("C-c t r" . treemacs-remove-workspace)
-                ("C-c t m" . treemacs-rename-workspace)
-                ("C-c t w r" . treemacs-remove-project-from-workspace)
-                ("C-c t w a" . treemacs-add-project-to-workspace)
-                ("C-c t a" . treemacs-add-project-to-workspace)))
+    (use-package treemacs
+      :config
+      (progn
+        (treemacs-follow-mode t)
+        (treemacs-filewatch-mode t)
+        (treemacs-fringe-indicator-mode 'always)
+        (pcase (cons (not (null (executable-find "git")))
+                     (not (null treemacs-python-executable)))
+          (`(t . t)
+           (treemacs-git-mode 'deferred))
+          (`(t . _)
+           (treemacs-git-mode 'simple))))
+      :bind (:map global-map
+                  ("<f8>" . treemacs)
+                  ("C-c t t" . treemacs)
+                  ("C-c t c" . treemacs-collapse-project)
+                  ("C-c t s" . treemacs-switch-workspace)
+                  ("C-c t r" . treemacs-remove-workspace)
+                  ("C-c t m" . treemacs-rename-workspace)
+                  ("C-c t w r" . treemacs-remove-project-from-workspace)
+                  ("C-c t w a" . treemacs-add-project-to-workspace)
+                  ("C-c t a" . treemacs-add-project-to-workspace)))
 
-  (use-package treemacs-magit
-    :after (treemacs magit))
+    (use-package treemacs-magit
+      :after (treemacs magit))
 
-  (use-package treemacs-projectile
-    :after (treemacs projectile))
+    (use-package treemacs-projectile
+      :after (treemacs projectile))
+
+    (use-package treemacs-icons-dired
+      :after (treemacs)
+      :config (add-hook 'dired-mode-hook 'treemacs-icons-dired-mode))
 #+END_SRC
 
 Undo-tree with undo and redo bindings:
@@ -467,7 +509,8 @@ The org itself:
    '((lisp . t)
      (emacs-lisp :results output silent . t)
      (latex . t)
-     (python . t)))
+     (python . t)
+     (shell . t)))
 
   (use-package org-super-agenda
     :config (org-super-agenda-mode))
@@ -481,7 +524,7 @@ The org itself:
     (org-journal-dir org-journal-dir)
     (org-journal-date-format "%A, %d %B %Y")
     (org-journal-enable-agenda-integration t))
-            #+END_SRC
+#+END_SRC
 
 Set-up org-capture templates:
 #+BEGIN_SRC emacs-lisp :results output silent
@@ -708,12 +751,6 @@ Set nickname, real-name, setup SASL, and define a function to connect to [[irc.l
 
    (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
    (add-hook 'python-mode-hook #'eglot-ensure)
-#+END_SRC
-
-Arduino mode:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package arduino-mode
-    :after flycheck)
 #+END_SRC
 
 Terraform language mode:
