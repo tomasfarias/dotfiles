@@ -30,6 +30,7 @@ fi
 
 export EDITOR="emacsclient -c -a \"emacs\""
 export GPG_TTY=$(tty)
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 
 # Rust paths
 export PATH="$HOME/.cargo/bin:$PATH"
