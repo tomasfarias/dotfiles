@@ -19,6 +19,7 @@
     text_icon_padding = 0
     frame_width = 3
     frame_color = "#928374CC"
+    fullscreen = delay
     separator_color = frame
     sort = yes
     idle_threshold = 30
@@ -109,6 +110,11 @@
     timeout = 0
     # Icon for notifications with critical urgency, uncomment to enable
     #icon = /path/to/icon
+
+[slack]
+appname = "Slack*"
+desktop_entry = "Slack*"
+new_icon = "/usr/share/icons/Papirus-Dark/32x32/apps/slack.svg"
 
 [slack]
 appname = "Slack*"
