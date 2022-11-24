@@ -269,36 +269,6 @@ Ace window allows me to visually change windows as an alternative to ~C-x o~ :
     :config (global-set-key (kbd "M-o") 'ace-window))
 #+END_SRC
 
-
-
-Browser:
-#+BEGIN_SRC emacs-lisp
-  (use-package eaf
-    :straight (eaf
-               :type git
-               :host github
-               :repo "emacs-eaf/emacs-application-framework"
-               :includes (eaf-pdf-viewer eaf-browser eaf-terminal eaf-all-the-icons)
-               :files ("*.el" "*.py" "core" "app" "*.json")
-               :pre-build (("python" "install-eaf.py" "--install" "pdf-viewer" "browser" "terminal" "--ignore-sys-deps"))))
-
-  (use-package eaf-browser
-    :custom
-    (browse-url-browser-function 'eaf-open-browser)
-    :config
-    (defalias 'browse-web #'eaf-open-browser)
-    (setq eaf-python-command (expand-file-name "~/.pyenv/versions/3.10eaf/bin/python"))
-    (add-to-list 'eaf-wm-focus-fix-wms 'Sway)
-    (add-to-list 'eaf-wm-focus-fix-wms "wlroots wm"))
-
-  (use-package eaf-pdf-viewer
-    :config
-    (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
-    (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding))
-
-  (use-package eaf-terminal)
-#+END_SRC
-
 Magit:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
@@ -439,7 +409,6 @@ Documentation management:
 
 Whitespace management:
 #+BEGIN_SRC emacs-lisp :results output silent
-#+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-c w w") 'whitespaceg-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
