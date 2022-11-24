@@ -5,7 +5,7 @@ fade-in=1
 font=MonoLisa
 font-size=16
 grace=10
-image=$HOME/Pictures/coffee-cat-gruvbox-3440x1440.png
+image=$HOME/Pictures/backgrounds/gruvbox-streets.1920x1080.jpg
 
 ignore-empty-password
 

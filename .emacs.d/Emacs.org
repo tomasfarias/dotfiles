@@ -271,6 +271,34 @@ Ace window allows me to visually change windows as an alternative to ~C-x o~ :
 
 
 
+Browser:
+#+BEGIN_SRC emacs-lisp
+  (use-package eaf
+    :straight (eaf
+               :type git
+               :host github
+               :repo "emacs-eaf/emacs-application-framework"
+               :includes (eaf-pdf-viewer eaf-browser eaf-terminal eaf-all-the-icons)
+               :files ("*.el" "*.py" "core" "app" "*.json")
+               :pre-build (("python" "install-eaf.py" "--install" "pdf-viewer" "browser" "terminal" "--ignore-sys-deps"))))
+
+  (use-package eaf-browser
+    :custom
+    (browse-url-browser-function 'eaf-open-browser)
+    :config
+    (defalias 'browse-web #'eaf-open-browser)
+    (setq eaf-python-command (expand-file-name "~/.pyenv/versions/3.10eaf/bin/python"))
+    (add-to-list 'eaf-wm-focus-fix-wms 'Sway)
+    (add-to-list 'eaf-wm-focus-fix-wms "wlroots wm"))
+
+  (use-package eaf-pdf-viewer
+    :config
+    (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
+    (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding))
+
+  (use-package eaf-terminal)
+#+END_SRC
+
 Magit:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
@@ -364,10 +392,54 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
   (use-package swiper
     :after ivy
     :config (global-set-key (kbd "C-s") 'swiper-isearch))
+
+  (ivy-mode 1)
+#+END_SRC
+
+Documentation management:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun go-doc()
+    (interactive)
+    (setq-local dash-docs-docsets '("Go")))
+
+  (defun rust-doc()
+    (interactive)
+    (setq-local dash-docs-docsets '("Rust")))
+
+  (defun python-doc()
+    (interactive)
+    (setq-local dash-docs-docsets '("Python 3")))
+
+  (defun emacs-lisp-doc()
+    (interactive)
+    (setq-local dash-docs-docsets '("Emacs Lisp")))
+
+  (use-package dash-docs
+    :config (add-hook 'go-mode-hook 'go-doc)
+    (add-hook 'python-mode-hook 'python-doc)
+    (add-hook 'rust-mode-hook 'rust-doc)
+    (add-hook 'emacs-lisp-mode-hook 'emacs-lisp-doc)
+    (setq dash-docs-docsets-path (expand-file-name "~/.docsets")))
+
+  (use-package counsel-dash
+    :config (add-hook 'emacs-lisp-mode-hook (lambda () (setq-local counsel-dash-docsets '("Emacs Lisp"))))
+    (add-hook 'python-mode-hook (lambda () (setq-local counsel-dash-docsets '("Python"))))
+    (add-hook 'go-mode-hook (lambda () (setq-local counsel-dash-docsets '("Go"))))
+    (add-hook 'rustic-mode-hook (lambda () (setq-local counsel-dash-docsets '("Rust"))))
+    (setq counsel-dash-docsets-path (expand-file-name "~/.docset"))
+    (setq counsel-dash-docsets-url "https://raw.github.com/Kapeli/feeds/master")
+    (setq counsel-dash-min-length 3)
+    (setq counsel-dash-candidate-format "%d %n (%t)")
+    (setq counsel-dash-enable-debugging nil)
+    (setq counsel-dash-common-docsets '("Python 3" "Rust"))
+    (setq counsel-dash-browser-func 'browse-url)
+    (setq counsel-dash-ignored-docsets nil)
+    (global-set-key (kbd "C-c c d") 'counsel-dash))
 #+END_SRC
 
 Whitespace management:
 #+BEGIN_SRC emacs-lisp :results output silent
+#+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-c w w") 'whitespaceg-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
@@ -827,7 +899,7 @@ Go language mode:
 Rust language mode:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package rustic
-    :config (add-hook 'rustic-mode 'eglot-ensure)
+    :config (add-hook 'rustic-mode-hook 'eglot-ensure)
     (setq
      ;; eglot seems to be the best option right now.
      rustic-lsp-client 'eglot
