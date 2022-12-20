@@ -21,7 +21,7 @@ Ensure environment variables (like PATH) are loaded from SHELL:
     (exec-path-from-shell-initialize))
 
   (setq-default explicit-shell-file-name "/bin/zsh")
-#+END_SRC
+    #+END_SRC
 
 Disable many things:
 #+BEGIN_SRC emacs-lisp :results output silent
@@ -73,8 +73,10 @@ Manage Emacs theme with ~doom-themes~:
   (use-package doom-themes
     :config
     ;; Global settings (defaults)
-    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-          doom-themes-enable-italic nil) ; if nil, italics is universally disabled
+    (setq doom-themes-enable-bold t
+          doom-themes-enable-italic t
+          doom-gruvbox-brighter-comments t
+          doom-gruvbox-dark-variant "hard")
     (load-theme 'doom-gruvbox t)
 
     ;; Enable flashing mode-line on errors
@@ -91,14 +93,15 @@ Although I'm currently in love with Gruvbox, I like to swap things around from t
 Doom-modeline:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package all-the-icons)
+
   (use-package doom-modeline
     :init (doom-modeline-mode 1)
-    :config (setq doom-modeline-height 35))
-
-  (custom-set-faces
-   '(mode-line ((t (:family "MonoLisa"))))
-   '(mode-line-active ((t (:family "MonoLisa" :weight bold :height 100))))
-   '(mode-line-inactive ((t (:family "MonoLisa" :height 100)))))
+    :config (setq doom-modeline-height 40)
+    (setq doom-modeline-hud nil)
+    (setq doom-modeline-window-width-limit 100)
+    (setq all-the-icons-scale-factor 1.0)
+    (setq all-the-icons-default-adjust 0.0)
+    (setq doom-modeline-icon t))
 #+END_SRC
 
 Ensure line and column numbers:
@@ -129,27 +132,28 @@ By default, do not indent with tabs:
   (setq-default indent-tabs-mode nil)
 #+END_SRC
 
+Degenerate emojis:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package emojify
+    :init (setq emojify-emoji-set "openmoji-v13-0")
+    :hook (after-init . global-emojify-mode))
+#+END_SRC
+
 Attempt to set fonts:
 #+BEGIN_SRC emacs-lisp :results output silent
-  (when (member "MonoLisa-Regular" (font-family-list))
-    (set-frame-font "MonoLisa-Regular-13:Regular" t t))
+  (defun tomas/setup-font-faces ()
+    (setq-default line-spacing 1)
+    (set-face-attribute 'default nil :font (font-spec :family "Iosevka Fixed SS18" :size 18 :weight 'medium :style 'extended))
+    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "Iosevka Fixed SS18" :size 18 :weight 'medium :style 'extended))
+    (set-face-attribute 'variable-pitch nil :font (font-spec :family "Iosevka Aile" :size 18 :weight 'medium))
 
-  (custom-theme-set-faces
-   'user
-   '(variable-pitch ((t (:family "Source Sans Pro" :height 120 :weight normal))))
-   '(fixed-pitch ((t (:family "MonoLisa" :slant normal :weight normal :height 120 :width normal)))))
+    (set-face-attribute 'mode-line nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'bold :size 18 :height 0.8 :style 'extended))
+    (set-face-attribute 'mode-line-active nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'bold :size 18 :height 0.8 :style 'extended))
+    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'normal :size 18 :height 0.8 :style 'extended))
+    )
 
-  (custom-theme-set-faces
-   'user
-   '(org-block                 ((t (:inherit fixed-pitch))))
-   '(org-code                  ((t (:inherit fixed-pitch))))
-   '(org-link                  ((t (:inherit variable-pitch :underline t))))
-   '(org-table                 ((t (:inherit fixed-pitch))))
-   '(org-document-info-keyword ((t (:inherit (shadow fixed-pitch)))))
-   '(org-property-value        ((t (:inherit fixed-pitch))) t)
-   '(org-special-keyword       ((t (:inherit (font-lock-comment-face fixed-pitch)))))
-   '(org-tag                   ((t (:inherit (shadow fixed-pitch) :weight bold))))
-   '(org-verbatim              ((t (:inherit (shadow fixed-pitch))))))
+  (add-hook 'after-init-hook 'tomas/setup-font-faces)
+  (add-hook 'server-after-make-frame-hook 'tomas/setup-font-faces)
 #+END_SRC
 
 Display line numbers everywhere:
@@ -182,6 +186,17 @@ Lisp and browsing:
   (use-package sly
     :straight (:host github :repo "joaotavora/sly" :branch "master")
     :config (setq inferior-lisp-program "sbcl"))
+
+  (use-package shrface
+    :config
+    (shrface-basic)
+    (shrface-trial)
+    (shrface-default-keybindings) ; setup default keybindings
+    (setq shrface-href-versatile t))
+
+  (use-package eww
+    :init
+    (add-hook 'eww-after-render-hook #'shrface-mode))
 
   (setq browse-url-browser-function 'eww-browse-url)
 
@@ -241,7 +256,7 @@ Lisp and browsing:
                   (python python-mode)
                   (r r-mode)
                   (ruby ruby-mode)
-                  (rust rust-mode)
+                  (rust rustic-mode)
                   (scala scala-mode)
                   (shell shell-script-mode)
                   (smalltalk smalltalk-mode)
@@ -292,38 +307,38 @@ Projectile:
 
 Treemacs mode for file and project exploring:
 #+BEGIN_SRC emacs-lisp :results output silent
-    (use-package treemacs
-      :config
-      (progn
-        (treemacs-follow-mode t)
-        (treemacs-filewatch-mode t)
-        (treemacs-fringe-indicator-mode 'always)
-        (pcase (cons (not (null (executable-find "git")))
-                     (not (null treemacs-python-executable)))
-          (`(t . t)
-           (treemacs-git-mode 'deferred))
-          (`(t . _)
-           (treemacs-git-mode 'simple))))
-      :bind (:map global-map
-                  ("<f8>" . treemacs)
-                  ("C-c t t" . treemacs)
-                  ("C-c t c" . treemacs-collapse-project)
-                  ("C-c t s" . treemacs-switch-workspace)
-                  ("C-c t r" . treemacs-remove-workspace)
-                  ("C-c t m" . treemacs-rename-workspace)
-                  ("C-c t w r" . treemacs-remove-project-from-workspace)
-                  ("C-c t w a" . treemacs-add-project-to-workspace)
-                  ("C-c t a" . treemacs-add-project-to-workspace)))
+  (use-package treemacs
+    :config
+    (progn
+      (treemacs-follow-mode t)
+      (treemacs-filewatch-mode t)
+      (treemacs-fringe-indicator-mode 'always)
+      (pcase (cons (not (null (executable-find "git")))
+                   (not (null treemacs-python-executable)))
+        (`(t . t)
+         (treemacs-git-mode 'deferred))
+        (`(t . _)
+         (treemacs-git-mode 'simple))))
+    :bind (:map global-map
+                ("<f8>" . treemacs)
+                ("C-c t t" . treemacs)
+                ("C-c t c" . treemacs-collapse-project)
+                ("C-c t s" . treemacs-switch-workspace)
+                ("C-c t r" . treemacs-remove-workspace)
+                ("C-c t m" . treemacs-rename-workspace)
+                ("C-c t w r" . treemacs-remove-project-from-workspace)
+                ("C-c t w a" . treemacs-add-project-to-workspace)
+                ("C-c t a" . treemacs-add-project-to-workspace)))
 
-    (use-package treemacs-magit
-      :after (treemacs magit))
+  (use-package treemacs-magit
+    :after (treemacs magit))
 
-    (use-package treemacs-projectile
-      :after (treemacs projectile))
+  (use-package treemacs-projectile
+    :after (treemacs projectile))
 
-    (use-package treemacs-icons-dired
-      :after (treemacs)
-      :config (add-hook 'dired-mode-hook 'treemacs-icons-dired-mode))
+  (use-package treemacs-icons-dired
+    :after (treemacs)
+    :config (add-hook 'dired-mode-hook 'treemacs-icons-dired-mode))
 #+END_SRC
 
 Undo-tree with undo and redo bindings:
@@ -387,13 +402,14 @@ Documentation management:
   (use-package dash-docs
     :config (add-hook 'go-mode-hook 'go-doc)
     (add-hook 'python-mode-hook 'python-doc)
-    (add-hook 'rust-mode-hook 'rust-doc)
+    (add-hook 'rustic-mode-hook 'rust-doc)
     (add-hook 'emacs-lisp-mode-hook 'emacs-lisp-doc)
-    (setq dash-docs-docsets-path (expand-file-name "~/.docsets")))
+    (setq dash-docs-docsets-path (expand-file-name "~/.docsets"))
+    (setq dash-docs-browser-func 'eww))
 
   (use-package counsel-dash
     :config (add-hook 'emacs-lisp-mode-hook (lambda () (setq-local counsel-dash-docsets '("Emacs Lisp"))))
-    (add-hook 'python-mode-hook (lambda () (setq-local counsel-dash-docsets '("Python"))))
+    (add-hook 'python-mode-hook (lambda () (setq-local counsel-dash-docsets '("Python 3"))))
     (add-hook 'go-mode-hook (lambda () (setq-local counsel-dash-docsets '("Go"))))
     (add-hook 'rustic-mode-hook (lambda () (setq-local counsel-dash-docsets '("Rust"))))
     (setq counsel-dash-docsets-path (expand-file-name "~/.docset"))
@@ -459,12 +475,12 @@ Set base org directory and default notes file:
     "Org babel library.")
 #+END_SRC
 
-The org itself:
+Custom ~org-agenda~ functions:
 #+BEGIN_SRC emacs-lisp :results output silent
   (defun agenda-skip-subtree-if-priority (priority)
     "Skip an agenda subtree if it has a priority of PRIORITY.
 
-        PRIORITY may be one of the characters ?A, ?B, or ?C."
+              PRIORITY may be one of the characters ?A, ?B, or ?C."
     (let ((subtree-end (save-excursion (org-end-of-subtree t)))
           (pri-value (* 1000 (- org-lowest-priority priority)))
           (pri-current (org-get-priority (thing-at-point 'line t))))
@@ -478,6 +494,14 @@ The org itself:
       (if (string= (org-entry-get nil "STYLE") "habit")
           subtree-end
         nil)))
+
+#+END_SRC
+
+The org itself:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun line-spacing-hook ()
+    (setq line-spacing 2))
+  (add-hook 'org-mode-hook 'line-spacing-hook)
 
   (use-package org
     :init
@@ -532,9 +556,21 @@ The org itself:
            ("C-M-|" . indent-rigidly))
     :config
     (add-hook 'org-mode-hook 'visual-line-mode)
-    (add-hook 'org-mode-hook 'variable-pitch-mode)
+    (add-hook 'org-mode-hook 'line-spacing-hook)
     (add-hook 'org-mode-hook 'flyspell-mode))
 
+  (custom-set-faces
+   '(org-level-1 ((t (:inherit outline-1 :height 1.5))))
+   '(org-level-2 ((t (:inherit outline-2 :height 1.4))))
+   '(org-level-3 ((t (:inherit outline-3 :height 1.3))))
+   '(org-level-4 ((t (:inherit outline-4 :height 1.2))))
+   '(org-level-5 ((t (:inherit outline-5 :height 1.1))))
+   )
+  (setq org-highlight-latex-and-related '(latex script entities))
+#+END_SRC
+
+Additional org packages:
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package org-preview-html)
 
   (use-package org-fragtog
@@ -565,6 +601,8 @@ The org itself:
     (org-journal-dir org-journal-dir)
     (org-journal-date-format "%A, %d %B %Y")
     (org-journal-enable-agenda-integration t))
+
+  (plist-put org-format-latex-options :scale 1.75)
 #+END_SRC
 
 Set-up org-capture templates:
