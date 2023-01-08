@@ -1,8 +1,8 @@
 * {
     border: none;
     border-radius: 0;
-    font-family: "MonoLisa", "Font Awesome 6 Free Solid", "Font Awesome 6 Free Regular", "file-icons", "all-the-icons", mono;
-    font-size: 16px;
+    font-family: mono;
+    font-size: 17px;
     font-weight: normal;
     min-height: 0;
     min-width: 0;
@@ -38,7 +38,7 @@ window#waybar.hidden {
 
 #window {
     background: transparent;
-    font-family: "MonoLisa", mono;
+    font-family: mono;
     color: @fg;
     padding: 0 5px;
     border-radius: 3px;
@@ -58,7 +58,7 @@ window#waybar.hidden {
 }
 
 #workspaces button.focused {
-    background: #b8bb26;
+    background: @green_b;
     color: @bg;
 }
 
@@ -94,19 +94,19 @@ window#waybar.hidden {
 }
 
 #battery.charging, #battery.full {
-    background: #b8bb26;
+    background: @green_b;
 }
 
 @keyframes blink-critical {
     to {
-        background-color: #fb4933;
+        background-color: @red_b;
         color: #1c1c1c;
     }
 }
 
 @keyframes blink-warning {
     to {
-        background-color: #fabd2f;
+        background-color: @yellow_b;
         color: #1c1c1c;
     }
 }
