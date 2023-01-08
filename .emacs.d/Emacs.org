@@ -3,27 +3,12 @@
 #+ AUTHOR: Tomás Farías Santana
 
 * General settings
-Enable syntax-highlighting for all buffers:
+Enable syntax-highlighting for all buffers.
 #+BEGIN_SRC emacs-lisp :results output silent
   (global-font-lock-mode t)
 #+END_SRC
 
-Ensure environment variables (like PATH) are loaded from SHELL:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package exec-path-from-shell)
-
-  (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
-    (add-to-list 'exec-path-from-shell-variables var))
-
-  (when (memq window-system '(mac ns x pgtk))
-    (exec-path-from-shell-initialize))
-  (when (daemonp)
-    (exec-path-from-shell-initialize))
-
-  (setq-default explicit-shell-file-name "/bin/zsh")
-    #+END_SRC
-
-Disable many things:
+Clean up Emacs by disabling modes that I don't use all the time.
 #+BEGIN_SRC emacs-lisp :results output silent
   (when (functionp 'menu-bar-mode)
     (menu-bar-mode -1))
@@ -41,7 +26,16 @@ Disable many things:
         initial-major-mode 'fundamental-mode)
 #+END_SRC
 
-Backup files in system's temp directory:
+Ensure UTF-8 everywhere.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (prefer-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (setq default-buffer-file-coding-system 'utf-8)
+#+END_SRC
+
+Backup files in system's temp directory instead of default.
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq backup-directory-alist
         `((".*" . ,temporary-file-directory)))
@@ -54,14 +48,27 @@ Shorter yes/no:
   (defalias 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
-Ensure UTF-8 everywhere:
+Setup auth-sources:
 #+BEGIN_SRC emacs-lisp :results output silent
-  (prefer-coding-system 'utf-8)
-  (set-default-coding-systems 'utf-8)
-  (set-terminal-coding-system 'utf-8)
-  (set-keyboard-coding-system 'utf-8)
-  (setq default-buffer-file-coding-system 'utf-8)
+  (setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
+
+** Environment variables
+Ensure environment variables (like ~PATH~) are loaded from SHELL:
+
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package exec-path-from-shell)
+
+  (dolist (var '("SSH_AUTH_SOCK" "SSH_AGENT_PID" "GPG_AGENT_INFO" "LANG" "LC_CTYPE"))
+    (add-to-list 'exec-path-from-shell-variables var))
+
+  (when (memq window-system '(mac ns x pgtk))
+    (exec-path-from-shell-initialize))
+  (when (daemonp)
+    (exec-path-from-shell-initialize))
+
+  (setq-default explicit-shell-file-name "/bin/zsh")
+    #+END_SRC
 
 * Aesthetics
 Manage Emacs theme with ~doom-themes~:
@@ -95,13 +102,13 @@ Doom-modeline:
   (use-package all-the-icons)
 
   (use-package doom-modeline
-    :init (doom-modeline-mode 1)
     :config (setq doom-modeline-height 40)
     (setq doom-modeline-hud nil)
     (setq doom-modeline-window-width-limit 100)
     (setq all-the-icons-scale-factor 1.0)
     (setq all-the-icons-default-adjust 0.0)
-    (setq doom-modeline-icon t))
+    (setq doom-modeline-icon t)
+    :hook (after-init . doom-modeline-mode))
 #+END_SRC
 
 Ensure line and column numbers:
@@ -284,7 +291,9 @@ Ace window allows me to visually change windows as an alternative to ~C-x o~ :
     :config (global-set-key (kbd "M-o") 'ace-window))
 #+END_SRC
 
-Magit:
+** Git interaction
+We use Magit to interact with git in Emacs.
+
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
     :config (global-set-key (kbd "C-c g") 'magit-file-dispatch))
@@ -295,7 +304,9 @@ Magit:
     (pinentry-start))
 #+END_SRC
 
+** Project management
 Projectile:
+
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package projectile
     :diminish projectile-mode
@@ -305,7 +316,9 @@ Projectile:
     (projectile-global-mode))
 #+END_SRC
 
-Treemacs mode for file and project exploring:
+** Treemacs
+Treemacs mode for file and project exploring. Personally, treemacs should come bundled with Emacs.
+
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package treemacs
     :config
@@ -351,7 +364,9 @@ Undo-tree with undo and redo bindings:
     (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/.cache"))))
 #+END_SRC
 
+** Ivy
 Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set:
+
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package ivy
     :config
@@ -381,7 +396,9 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
   (ivy-mode 1)
 #+END_SRC
 
-Documentation management:
+** Documentation management
+Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://github.com/dash-docs-el/dash-docs][dash-docs]] offline. Inspired by [[https://hynek.me/articles/productive-fruit-fly-programmer/][Hynek's blogpost]].
+
 #+BEGIN_SRC emacs-lisp :results output silent
   (defun go-doc()
     (interactive)
@@ -423,18 +440,20 @@ Documentation management:
     (global-set-key (kbd "C-c c d") 'counsel-dash))
 #+END_SRC
 
-Whitespace management:
+** Whitespace management
+Mostly for deleting trailing whitespace
+
 #+BEGIN_SRC emacs-lisp :results output silent
   (global-set-key (kbd "C-c w w") 'whitespaceg-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 
-Rainbows:
+** Rainbows
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package rainbow-delimiters)
 #+END_SRC
 
-Multiple cursors:
+** Multiple cursors
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package multiple-cursors
     :config (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
@@ -443,7 +462,7 @@ Multiple cursors:
     (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this))
 #+END_SRC
 
-Snippet management:
+** Snippet management
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package yasnippet
     :straight t
@@ -454,6 +473,27 @@ Snippet management:
           '("~/src/github.com/tomasfarias/snippets"
             )))
   (yas-global-mode 1)
+#+END_SRC
+
+** RSS
+In an effort to move everything to Emacs, I'm switching from an RSS reader in my browser to [[https://github.com/skeeto/elfeed][Elfeed]].
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package elfeed
+    :straight t
+    :config
+    (let* ((host "https://github.com/tomasfarias.private.atom")
+           ;; Fetches token from auth-source and constructs feed URL.
+           (github-feed (format "%s?%s" host (funcall (plist-get (car (auth-source-search :host host)) :secret)))))
+      (setq elfeed-feeds
+            ;; We use backquote syntax to evaluate github-feed.
+            `(("https://news.ycombinator.com/rss" news)
+              (,github-feed monitoring)
+              ("https://hynek.me/index.xml" blog dev)
+              ("http://threesixty360.wordpress.com/feed/" blog math))))
+    (add-hook 'elfeed-new-entry-hook
+              (elfeed-make-tagger :before "2 weeks ago"
+                                  :remove 'unread)))
+  (global-set-key (kbd "C-c r d") 'elfeed)
 #+END_SRC
 
 * Everything org
@@ -786,28 +826,32 @@ Deft for org files:
 * IRC with ERC
 Set nickname, real-name, setup SASL, and define a function to connect to [[irc.libera.chat]]:
 #+BEGIN_SRC emacs-lisp :results output silent
-  (setq
-   erc-nick "tomasfarias"
-   erc-server-auto-reconnect t
-   erc-server-reconnect-timeout 15)
+  (use-package erc
+    :config
+    (setopt
+     erc-sasl-mechanism 'plain
+     erc-sasl-auth-source-function #'erc-sasl-auth-source-password-as-host)
+    (setq
+     erc-nick "tomasfarias"
+     erc-prompt-for-password nil
+     erc-server-auto-reconnect t
+     erc-server-reconnect-timeout 15
+     erc-autojoin-channels-alist '(("Libera.Chat" "#emacs" "#python" "##rust" "#archlinux" "#archlinux-offtopic" "#reddit-sysadmin" "#linux" "#networking" "#security"))))
 
-  (defun erc-libera-start ()
+  (defun tomas/erc-libera-start ()
     (interactive)
     (erc-tls
      :server "irc.libera.chat"
      :port 6697
      :nick "tomasfarias"
-     :full-name "Tomás Farías")
-    (erc
-     :server "irc.libera.chat"
-     :port 6667
-     :nick "tomasfarias"
+     :user "tomasfarias"
+     :password "irc.libera.chat"
      :full-name "Tomás Farías"))
  #+END_SRC
 
 * Language modes
  Python language mode settings:
- #+BEGIN_SRC emacs-lisp :results output silent
+ #+BEGIN_SRC emacs-lisp :results output silentp
    (use-package pyvenv
      :ensure t
      :init
@@ -937,4 +981,18 @@ Syntax checking with flycheck:
     (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 
   (use-package solidity-flycheck)
+#+END_SRC
+
+Typescript stuff:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package web-mode)
+  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode))
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+
+  (use-package tide
+    :ensure t
+    :after (typescript-mode company flycheck)
+    :hook ((typescript-mode . tide-setup)
+           (typescript-mode . tide-hl-identifier-mode)
+           (before-save . tide-format-before-save)))
 #+END_SRC
