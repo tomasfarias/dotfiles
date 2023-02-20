@@ -43,19 +43,23 @@ Backup files in system's temp directory instead of default.
         `((".*" ,temporary-file-directory t)))
 #+END_SRC
 
-Shorter yes/no:
+Shorter yes/no.
 #+BEGIN_SRC emacs-lisp :results output silent
   (defalias 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
-Setup auth-sources:
+Define auth-sources. These are used to login to IRC and RSS feeds.
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
 
+Automatically revert buffers for changed files.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (global-auto-revert-mode 1)
+#+END_SRC
+
 ** Environment variables
 Ensure environment variables (like ~PATH~) are loaded from SHELL:
-
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package exec-path-from-shell)
 
@@ -68,10 +72,11 @@ Ensure environment variables (like ~PATH~) are loaded from SHELL:
     (exec-path-from-shell-initialize))
 
   (setq-default explicit-shell-file-name "/bin/zsh")
-    #+END_SRC
+#+END_SRC
 
 * Aesthetics
-Manage Emacs theme with ~doom-themes~:
+** Theme
+I manage my Emacs theme with ~doom-themes~. Although I'm currently in love with Gruvbox, I like to swap things around from time to time, and ~doom-themes~ bundles up a lot of great themes for me to try.
 #+BEGIN_SRC emacs-lisp :results output silent :results output silent
   (use-package solaire-mode
     ;; Darkens "support" buffers (those not opening a file) to help distinguish them
@@ -95,11 +100,11 @@ Manage Emacs theme with ~doom-themes~:
     (doom-themes-org-config))
 #+END_SRC
 
-Although I'm currently in love with Gruvbox, I like to swap things around from time to time, and ~doom-themes~ bundles up a lot of great themes for me to try.
-
-Doom-modeline:
+** Doom-modeline
+A beautiful modeline.
 #+BEGIN_SRC emacs-lisp :results output silent
-  (use-package all-the-icons)
+  (use-package all-the-icons
+    :if (display-graphic-p))
 
   (use-package doom-modeline
     :config (setq doom-modeline-height 40)
@@ -111,42 +116,8 @@ Doom-modeline:
     :hook (after-init . doom-modeline-mode))
 #+END_SRC
 
-Ensure line and column numbers:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (line-number-mode 1)
-  (column-number-mode 1)
-#+END_SRC
-
-Hide the mouse while typing:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (setq make-pointer-invisible t)
-#+END_SRC
-
-Scrolling smoothly:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package smooth-scrolling
-    :init (smooth-scrolling-mode 1))
-#+END_SRC
-
-Transparency (requires native Wayland):
-#+BEGIN_SRC emacs-lisp :results output silent
-  (set-frame-parameter (selected-frame) 'alpha-background 90) ; For current frame
-  (add-to-list 'default-frame-alist '(alpha-background . 90)) ; For all new frames henceforth
-#+END_SRC
-
-By default, do not indent with tabs:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (setq-default indent-tabs-mode nil)
-#+END_SRC
-
-Degenerate emojis:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package emojify
-    :init (setq emojify-emoji-set "openmoji-v13-0")
-    :hook (after-init . global-emojify-mode))
-#+END_SRC
-
-Attempt to set fonts:
+** Fonts
+[[https://github.com/be5invis/Iosevka][Iosevka]] is my current font of choice. I set up both fixed and variable pitch, although at the time of writing I'm not using variable pitch.
 #+BEGIN_SRC emacs-lisp :results output silent
   (defun tomas/setup-font-faces ()
     (setq-default line-spacing 1)
@@ -163,32 +134,66 @@ Attempt to set fonts:
   (add-hook 'server-after-make-frame-hook 'tomas/setup-font-faces)
 #+END_SRC
 
-Display line numbers everywhere:
+** Miscellaneous settings
+*** Line and column numbers
 #+BEGIN_SRC emacs-lisp :results output silent
+  (line-number-mode 1)
+  (column-number-mode 1)
   (global-display-line-numbers-mode)
 #+END_SRC
 
-Customize my EMACS Dashboard:
+*** Hide pointer
 #+BEGIN_SRC emacs-lisp :results output silent
-  (use-package page-break-lines)
-
-  (use-package dashboard
-    :config (dashboard-setup-startup-hook)
-    (setq dashboard-startup-banner 'logo)
-    (setq dashboard-banner-logo-title "Get to work!")
-    (setq dashboard-set-heading-icons t)
-    (setq dashboard-set-file-icons t)
-    (setq dashboard-set-init-info t)
-    (setq dashboard-projects-backend 'projectile)
-    (setq dashboard-items '((recents  . 5)
-                            (bookmarks . 5)
-                            (projects . 5)
-                            (agenda . 5)
-                            (registers . 5))))
+  (setq make-pointer-invisible t)
 #+END_SRC
 
+*** Scrolling
+#+BEGIN_SRC emacs-lisp :results output silent
+    (pixel-scroll-precision-mode 1)
+    (pixel-scroll-mode 1)
+    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
+          mouse-wheel-progressive-speed nil ;; don't accelerate scrolling
+          mouse-wheel-follow-mouse 't ;; scroll window under mouse
+          scroll-step 0
+          scroll-conservatively 1000) ;; keyboard scroll one line at a time
+#+END_SRC
+
+*** Transparency
+This requires native Wayland compilation (Emacs >= 29).
+#+BEGIN_SRC emacs-lisp :results output silent
+  (set-frame-parameter (selected-frame) 'alpha-background 90) ; For current frame
+  (add-to-list 'default-frame-alist '(alpha-background . 90)) ; For all new frames henceforth
+#+END_SRC
+
+*** Indent
+I do most of my work with Python so, by default, do not indent with tabs.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq-default indent-tabs-mode nil)
+#+END_SRC
+
+** EMACS Dashboard:
+I also ensure ~recentf-mode~ is enabled as the Dashboard includes recent files.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package dashboard
+    :config (dashboard-setup-startup-hook)
+    (setq dashboard-startup-banner 'logo
+          dashboard-banner-logo-title "Trust the process."
+          dashboard-set-heading-icons t
+          dashboard-set-file-icons t
+          dashboard-set-init-info t
+          dashboard-filter-agenda-entry 'dashboard-filter-agenda-by-todo
+          dashboard-projects-backend 'projectile
+          dashboard-items '((recents  . 5)
+                            (bookmarks . 5)
+                            (projects . 5)
+                            (agenda . 10)
+                            (registers . 5))))
+  (recentf-mode 1)
+          #+END_SRC
+
 * Productivity modes
-Lisp and browsing:
+** Browser
+I use plain EWW with a function to toggle images as navigating sites with images is clunky.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package sly
     :straight (:host github :repo "joaotavora/sly" :branch "master")
@@ -207,7 +212,19 @@ Lisp and browsing:
 
   (setq browse-url-browser-function 'eww-browse-url)
 
-  (require 'cl-lib)
+  (defun tomas/eww-toggle-images ()
+    "Toggle whether images are loaded and reload the current page."
+    (interactive)
+    (setq-local shr-inhibit-images (not shr-inhibit-images))
+    (eww-reload t)
+    (message "Images are now %s"
+             (if shr-inhibit-images "off" "on")))
+
+  (define-key eww-mode-map (kbd "I") #'tomas/eww-toggle-images)
+  (define-key eww-link-keymap (kbd "I") #'tomas/eww-toggle-images)
+
+  ;; Minimal rendering by default
+  (setq-default shr-inhibit-images t)   ; toggle with `I`
 
   (defun eww-tag-pre (dom)
     (let ((shr-folding-mode 'none)
@@ -285,15 +302,15 @@ Lisp and browsing:
         '((pre . eww-tag-pre)))
 #+END_SRC
 
-Ace window allows me to visually change windows as an alternative to ~C-x o~ :
+** Windows
+Ace window allows me to visually change windows as an alternative to ~C-x o~:
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package ace-window
     :config (global-set-key (kbd "M-o") 'ace-window))
 #+END_SRC
 
 ** Git interaction
-We use Magit to interact with git in Emacs.
-
+I use Magit to interact with git in Emacs.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
     :config (global-set-key (kbd "C-c g") 'magit-file-dispatch))
@@ -305,20 +322,16 @@ We use Magit to interact with git in Emacs.
 #+END_SRC
 
 ** Project management
-Projectile:
-
+Projectile manages my projects.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package projectile
     :diminish projectile-mode
-    :init
-    (setq projectile-keymap-prefix (kbd "C-c p"))
-    :config
-    (projectile-global-mode))
+    :init (setq projectile-keymap-prefix (kbd "C-c p"))
+    :config (projectile-global-mode))
 #+END_SRC
 
 ** Treemacs
 Treemacs mode for file and project exploring. Personally, treemacs should come bundled with Emacs.
-
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package treemacs
     :config
@@ -354,7 +367,7 @@ Treemacs mode for file and project exploring. Personally, treemacs should come b
     :config (add-hook 'dired-mode-hook 'treemacs-icons-dired-mode))
 #+END_SRC
 
-Undo-tree with undo and redo bindings:
+** Undo and redo
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package undo-tree
     :config (global-undo-tree-mode 1)
@@ -365,8 +378,7 @@ Undo-tree with undo and redo bindings:
 #+END_SRC
 
 ** Ivy
-Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set:
-
+Ivy includes swiper, counsel, and ivy itself. These replace some standard commands as global bindings are set.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package ivy
     :config
@@ -398,7 +410,6 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
 
 ** Documentation management
 Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://github.com/dash-docs-el/dash-docs][dash-docs]] offline. Inspired by [[https://hynek.me/articles/productive-fruit-fly-programmer/][Hynek's blogpost]].
-
 #+BEGIN_SRC emacs-lisp :results output silent
   (defun go-doc()
     (interactive)
@@ -418,8 +429,11 @@ Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://gi
 
   (use-package dash-docs
     :config (add-hook 'go-mode-hook 'go-doc)
+    (add-hook 'go-ts-mode-hook 'go-doc)
     (add-hook 'python-mode-hook 'python-doc)
+    (add-hook 'python-ts-mode-hook 'python-doc)
     (add-hook 'rustic-mode-hook 'rust-doc)
+    (add-hook 'rustic-ts-mode-hook 'rust-doc)
     (add-hook 'emacs-lisp-mode-hook 'emacs-lisp-doc)
     (setq dash-docs-docsets-path (expand-file-name "~/.docsets"))
     (setq dash-docs-browser-func 'eww))
@@ -427,8 +441,11 @@ Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://gi
   (use-package counsel-dash
     :config (add-hook 'emacs-lisp-mode-hook (lambda () (setq-local counsel-dash-docsets '("Emacs Lisp"))))
     (add-hook 'python-mode-hook (lambda () (setq-local counsel-dash-docsets '("Python 3"))))
+    (add-hook 'python-ts-mode-hook (lambda () (setq-local counsel-dash-docsets '("Python 3"))))
     (add-hook 'go-mode-hook (lambda () (setq-local counsel-dash-docsets '("Go"))))
+    (add-hook 'go-ts-mode-hook (lambda () (setq-local counsel-dash-docsets '("Go"))))
     (add-hook 'rustic-mode-hook (lambda () (setq-local counsel-dash-docsets '("Rust"))))
+    (add-hook 'rustic-ts-mode-hook (lambda () (setq-local counsel-dash-docsets '("Rust"))))
     (setq counsel-dash-docsets-path (expand-file-name "~/.docset"))
     (setq counsel-dash-docsets-url "https://raw.github.com/Kapeli/feeds/master")
     (setq counsel-dash-min-length 3)
@@ -442,9 +459,8 @@ Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://gi
 
 ** Whitespace management
 Mostly for deleting trailing whitespace
-
 #+BEGIN_SRC emacs-lisp :results output silent
-  (global-set-key (kbd "C-c w w") 'whitespaceg-mode)
+  (global-set-key (kbd "C-c w w") 'whitespace-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 
@@ -462,42 +478,35 @@ Mostly for deleting trailing whitespace
     (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this))
 #+END_SRC
 
-** Snippet management
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package yasnippet
-    :straight t
-    :config
-    (global-set-key (kbd "C-c y n") 'yas-new-snippet)
-    (global-set-key (kbd "C-c y v") 'yas-visit-snippet-file)
-    (setq yas-snippet-dirs
-          '("~/src/github.com/tomasfarias/snippets"
-            )))
-  (yas-global-mode 1)
-#+END_SRC
-
 ** RSS
 In an effort to move everything to Emacs, I'm switching from an RSS reader in my browser to [[https://github.com/skeeto/elfeed][Elfeed]].
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package elfeed
     :straight t
-    :config
+    :config (add-hook 'elfeed-new-entry-hook
+                      (elfeed-make-tagger :before "2 weeks ago"
+                                          :remove 'unread)))
+  (defun tomas/elfeed ()
+    "Start elfeed after setting elfeed-feeds."
+    (interactive)
     (let* ((host "https://github.com/tomasfarias.private.atom")
-           ;; Fetches token from auth-source and constructs feed URL.
+           ;; Fetches token from auth-sources and constructs feed URL.
            (github-feed (format "%s?%s" host (funcall (plist-get (car (auth-source-search :host host)) :secret)))))
       (setq elfeed-feeds
             ;; We use backquote syntax to evaluate github-feed.
             `(("https://news.ycombinator.com/rss" news)
               (,github-feed monitoring)
               ("https://hynek.me/index.xml" blog dev)
+              ("https://third-bit.com/atom.xml" blog dev)
               ("http://threesixty360.wordpress.com/feed/" blog math))))
-    (add-hook 'elfeed-new-entry-hook
-              (elfeed-make-tagger :before "2 weeks ago"
-                                  :remove 'unread)))
-  (global-set-key (kbd "C-c r d") 'elfeed)
+    (elfeed))
+
+  (global-set-key (kbd "C-c r d") 'tomas/elfeed)
 #+END_SRC
 
 * Everything org
-Set base org directory and default notes file:
+** Initial setup
+Set base definitions: org directories, default org files, and custom functions.
 #+BEGIN_SRC emacs-lisp :results output silent
   (defconst org-directory "~/src/github.com/tomasfarias/org/"
     "org-mode directory and repo, where most of the org-mode file lives")
@@ -513,10 +522,7 @@ Set base org directory and default notes file:
     "New work-related stuff collected in this file.")
   (defconst org-babel-library-file (expand-file-name "org_library_of_babel.org" org-notes-dir)
     "Org babel library.")
-#+END_SRC
 
-Custom ~org-agenda~ functions:
-#+BEGIN_SRC emacs-lisp :results output silent
   (defun agenda-skip-subtree-if-priority (priority)
     "Skip an agenda subtree if it has a priority of PRIORITY.
 
@@ -535,14 +541,13 @@ Custom ~org-agenda~ functions:
           subtree-end
         nil)))
 
-#+END_SRC
-
-The org itself:
-#+BEGIN_SRC emacs-lisp :results output silent
   (defun line-spacing-hook ()
     (setq line-spacing 2))
-  (add-hook 'org-mode-hook 'line-spacing-hook)
+#+END_SRC
 
+** Org
+The org mode itself.
+#+BEGIN_SRC emacs-lisp :results output silent
   (use-package org
     :init
     (setq org-use-speed-commands t
@@ -558,8 +563,7 @@ The org itself:
           org-src-tabs-acts-natively t
           org-log-done 'time
           org-log-into-drawer t
-          org-agenda-files (quote ("~/src/github.com/tomasfarias/org"
-                                   "~/src/github.com/tomasfarias/org/notes"))
+          org-agenda-files (directory-files-recursively "~/src/github.com/tomasfarias/org" "\\.org$")
           org-agenda-span 10
           org-agenda-start-on-weekday 1
           org-agenda-include-diary t
@@ -595,6 +599,7 @@ The org itself:
            ("C-c o c" . org-capture)
            ("C-M-|" . indent-rigidly))
     :config
+    (add-hook 'org-mode-hook 'line-spacing-hook)
     (add-hook 'org-mode-hook 'visual-line-mode)
     (add-hook 'org-mode-hook 'line-spacing-hook)
     (add-hook 'org-mode-hook 'flyspell-mode))
@@ -609,17 +614,15 @@ The org itself:
   (setq org-highlight-latex-and-related '(latex script entities))
 #+END_SRC
 
-Additional org packages:
+** Additional org packages
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package org-preview-html)
 
   (use-package org-fragtog
-    :config
-    (add-hook 'org-mode-hook 'org-fragtog-mode))
+    :config (add-hook 'org-mode-hook 'org-fragtog-mode))
 
   (use-package org-superstar
-    :config
-    (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
+    :config (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
 
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -635,18 +638,12 @@ Additional org packages:
   (use-package org-journal
     :commands (org-journal-new-entry org-capture)
     :after (org-capture)
-    :bind
-    (("C-c o j" . org-journal-new-entry))
+    :bind (("C-c o j" . org-journal-new-entry))
     :custom
     (org-journal-dir org-journal-dir)
     (org-journal-date-format "%A, %d %B %Y")
     (org-journal-enable-agenda-integration t))
 
-  (plist-put org-format-latex-options :scale 1.75)
-#+END_SRC
-
-Set-up org-capture templates:
-#+BEGIN_SRC emacs-lisp :results output silent
   (defun org-journal-find-location ()
     ;; Open today's journal, but specify a non-nil prefix argument in order to
     ;; inhibit inserting the heading; org-capture will insert the heading.
@@ -655,6 +652,29 @@ Set-up org-capture templates:
       (org-narrow-to-subtree))
     (goto-char (point-max)))
 
+  (plist-put org-format-latex-options :scale 1.75)
+
+  (use-package org-drill
+    :bind (("C-c o d" . org-drill))
+    :config
+    (setq org-drill-hide-item-headings-p t
+          org-drill-maximum-duration 30
+          org-drill-maximum-items-per-session nil
+          org-drill-add-random-noise-to-intervals-p t
+          org-drill-adjust-intervals-for-early-and-late-repetitions-p t))
+
+  (defun tomas/org-drill-tag (tag)
+    "Start org-drill with a user chosen question tag."
+    (interactive "Input the tag to drill: ")
+    (custom-set-variables
+     '(org-drill-question-tag tag))
+    (org-drill)
+    (custom-set-variables
+     '(org-drill-question-tag "drill")))
+#+END_SRC
+
+** Templates
+#+BEGIN_SRC emacs-lisp :results output silent
   (setq org-capture-templates
         '(("i" "Inbox" entry (file org-inbox-file)
            "* TODO %?
@@ -670,7 +690,7 @@ Set-up org-capture templates:
            :immediate-finish t)))
 #+END_SRC
 
-Install org-roam:
+** Org-roam
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package org-roam
     :init (setq org-roam-v2-ack t)
@@ -730,7 +750,7 @@ Install org-roam:
           org-roam-ui-open-on-start t))
 #+END_SRC
 
-Bibliography and references:
+** Bibliography and references
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq bibtex-completion-bibliography (list (concat org-directory "bibliography/references.bib"))
         bibtex-completion-library-path (concat org-directory "bibliography/pdfs/")
@@ -806,7 +826,8 @@ Bibliography and references:
   (org-roam-bibtex-mode)
 #+END_SRC
 
-Deft for org files:
+** Deft
+Used to navigate org files.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package deft
     :after org
@@ -839,6 +860,7 @@ Set nickname, real-name, setup SASL, and define a function to connect to [[irc.l
      erc-autojoin-channels-alist '(("Libera.Chat" "#emacs" "#python" "##rust" "#archlinux" "#archlinux-offtopic" "#reddit-sysadmin" "#linux" "#networking" "#security"))))
 
   (defun tomas/erc-libera-start ()
+    "Initialize Libera.Chat connection with auth-source credentials."
     (interactive)
     (erc-tls
      :server "irc.libera.chat"
@@ -847,47 +869,58 @@ Set nickname, real-name, setup SASL, and define a function to connect to [[irc.l
      :user "tomasfarias"
      :password "irc.libera.chat"
      :full-name "Tomás Farías"))
- #+END_SRC
-
-* Language modes
- Python language mode settings:
- #+BEGIN_SRC emacs-lisp :results output silentp
-   (use-package pyvenv
-     :ensure t
-     :init
-     (setenv "WORKON_HOME" "~/.pyenv/versions")
-     (pyvenv-tracking-mode 1))
-
-   (use-package py-isort
-     :config (add-hook 'before-save-hook 'py-isort-before-save))
-
-   (use-package blacken
-     :hook (python-mode . blacken-mode)
-     :config
-     (setq blacken-only-if-project-is-blackened t))
-
-   (add-hook 'python-mode-hook
-             (lambda ()
-               (setq-default tab-width 4)
-               (add-to-list 'write-file-functions 'delete-trailing-whitespace)
-               (setq whitespace-style '(face empty trailing indentation::space))))
-
-   (add-hook 'python-mode-hook #'rainbow-delimiters-mode)
-   (add-hook 'python-mode-hook #'eglot-ensure)
 #+END_SRC
 
-Terraform language mode:
+* Language modes
+** Tree-sitter
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package treesit-auto
+    :demand t
+    :straight (treesit-auto
+               :type git
+               :host github
+               :repo "renzmann/treesit-auto")
+    :config
+    (setq treesit-auto-install 'prompt)
+    (global-treesit-auto-mode))
+
+  (use-package combobulate
+    :straight (combobulate
+               :type git
+               :host github
+               :repo "mickeynp/combobulate")
+    :hook ((python-ts-mode . combobulate-mode)
+           (js-ts-mode . combobulate-mode)
+           (css-ts-mode . combobulate-mode)
+           (yaml-ts-mode . combobulate-mode)
+           (typescript-ts-mode . combobulate-mode)
+           (rust-ts-mode . combobulate-mode)
+           (go-ts-mode . combobulate-mode)
+           (tsx-ts-mode . combobulate-mode)))
+#+END_SRC
+
+** Python
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package pyvenv
+    :ensure t
+    :init
+    (setenv "WORKON_HOME" "~/.pyenv/versions")
+    (pyvenv-tracking-mode 1))
+#+END_SRC
+
+** Terraform
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package terraform-mode)
 #+END_SRC
 
-Dockerfile mode:
+** Dockerfile
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package dockerfile-mode
     :config (add-to-list 'auto-mode-alist '("Dockerfile\\'" . dockerfile-mode)))
 #+END_SRC
 
-Groovy language mode:
+** Groovy
+Boy do I love Jenkins.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package groovy-mode
     :config (add-to-list 'auto-mode-alist '("Jenkinsfile\\'" . groovy-mode))
@@ -895,7 +928,7 @@ Groovy language mode:
     (setq groovy-indent-offset 2))
 #+END_SRC
 
-Markdown mode:
+** Markdown
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package markdown-mode
     :mode ("\\.md\\'" . gfm-mode)
@@ -905,66 +938,87 @@ Markdown mode:
     :config (add-to-list 'auto-mode-alist '("\\.md" . poly-markdown-mode)))
 #+END_SRC
 
-YAML mode:
+** YAML
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package yaml-mode
     :mode ("\\.yml\\'" . yaml-mode)
     ("\\.yaml\\'" . yaml-mode))
 #+END_SRC
 
-Language server protocol for auto-completion with company-mode:
+** LSP
+Language server protocol for auto-completion with company-mode.
 #+BEGIN_SRC emacs-lisp :results output silent
+  (use-package apheleia
+    :ensure t
+    :config
+    (apheleia-global-mode +1)
+    (setf (alist-get 'isort apheleia-formatters)
+          '("isort" "--stdout" "-"))
+    (setf (alist-get 'python-mode apheleia-mode-alist)
+          '(isort black))
+    (setf (alist-get 'python-ts-mode apheleia-mode-alist)
+          '(isort black))
+    )
+
   (use-package company
     :config (add-hook 'after-init-hook 'global-company-mode)
-    (setq company-idle-delay 1)
-    (setq company-minimum-prefix-length 1)
-    (setq company-selection-wrap-around t)
-    (setq company-show-numbers 1)
+    (setq company-idle-delay 1
+          company-minimum-prefix-length 1
+          company-selection-wrap-around t
+          company-show-numbers 1)
     (define-key company-active-map (kbd "C-n") 'company-select-next)
     (define-key company-active-map (kbd "C-p") 'company-select-previous)
     (define-key company-active-map (kbd "M-<") 'company-select-first)
     (define-key company-active-map (kbd "M->") 'company-select-last))
 
-  (use-package eglot
-    :config (define-key eglot-mode-map (kbd "C-c h") 'eldoc-box-eglot-help-at-point))
+  (use-package lsp-mode
+    :init (setq lsp-keymap-prefix "C-c l")
+    :hook ((python-mode . lsp)
+           (python-ts-mode . lsp)
+           (rust-ts-mode . lsp)
+           (typescript-mode . lsp)
+           (typescript-ts-mode . lsp)
+           (go-mode . lsp)
+           (go-ts-mode . lsp)
+           (lsp-mode . lsp-enable-which-key-integration))
+    :commands lsp)
 
-  (setq eldoc-echo-area-prefer-doc-buffer t)
-  (setq eldoc-idle-delay 3)
-  (setq eldoc-echo-area-use-multiline-p 5)
+  (use-package lsp-ui
+    :config (setq
+             lsp-ui-sideline-show-diagnostics nil
+             lsp-ui-sideline-show-hover nil
+             lsp-ui-sideline-show-code-actions nil
+             lsp-ui-doc-enable t
+             lsp-ui-doc-show-with-cursor nil
+             lsp-ui-doc-delay 1)
+    :bind ("C-c h" . lsp-ui-doc-toggle)
+    :commands lsp-ui-mode)
 
-  (use-package eldoc-box)
-  (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
+  (use-package lsp-ivy
+    :commands lsp-ivy-workspace-symbol)
+
+  (use-package lsp-treemacs
+    :commands lsp-treemacs-errors-list)
+
+  (use-package which-key
+    :config (which-key-mode))
+
+  (use-package lsp-pyright
+    :ensure t
+    :hook ((python-mode . (lambda ()
+                           (require 'lsp-pyright)
+                           (lsp)))
+    (python-ts-mode . (lambda ()
+                     (require 'lsp-pyright)
+                     (lsp)))))
 #+END_SRC
 
-Solidity language mode:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package solidity-mode
-    :config (setq solidity-comment-style 'slash))
-#+END_SRC
-
-Go language mode:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package go-mode)
-#+END_SRC
-
-Rust language mode:
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package rustic
-    :config (add-hook 'rustic-mode-hook 'eglot-ensure)
-    (setq
-     ;; eglot seems to be the best option right now.
-     rustic-lsp-client 'eglot
-     rustic-format-trigger 'on-save
-     ;; Prevent automatic syntax checking, which was causing lags and stutters.
-     eglot-send-changes-idle-time (* 60 60)))
-#+END_SRC
-
-Syntax checking with flycheck:
+** Flycheck
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package flycheck
     :init (global-flycheck-mode)
     :config (setq flycheck-flake8rc ".flake8")
-    :after eglot)
+    :after lsp-mode)
 
   (use-package flycheck-pycheckers
     :after flycheck
@@ -983,11 +1037,34 @@ Syntax checking with flycheck:
   (use-package solidity-flycheck)
 #+END_SRC
 
-Typescript stuff:
+** Solidity
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package solidity-mode
+    :config (setq solidity-comment-style 'slash))
+#+END_SRC
+
+** Go
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package go-mode)
+#+END_SRC
+
+** Rust
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package rustic
+    :config
+    (setq
+     rustic-lsp-client 'lsp-mode
+     ;; Let apheleia take care of format.
+     rustic-format-trigger 'nil))
+#+END_SRC
+
+** Typescript
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package web-mode)
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+
+  (setq typescript-ts-mode-indent-offset 4)
 
   (use-package tide
     :ensure t
