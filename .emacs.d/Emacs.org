@@ -37,9 +37,14 @@ Ensure UTF-8 everywhere.
 
 Backup files in system's temp directory instead of default.
 #+BEGIN_SRC emacs-lisp :results output silent
-  (setq backup-directory-alist
-        `((".*" . ,temporary-file-directory)))
-  (setq auto-save-file-name-transforms
+  (setq backup-by-copying t
+        delete-old-versions t
+        kept-new-versions 6
+        kept-old-versions 2
+        version-control t
+        backup-directory-alist
+        `((".*" . ,temporary-file-directory))
+        auto-save-file-name-transforms
         `((".*" ,temporary-file-directory t)))
 #+END_SRC
 
@@ -56,6 +61,12 @@ Define auth-sources. These are used to login to IRC and RSS feeds.
 Automatically revert buffers for changed files.
 #+BEGIN_SRC emacs-lisp :results output silent
   (global-auto-revert-mode 1)
+#+END_SRC
+
+Delete trailing whitespace and bind ~whitespace-mode~ for those rare debugging sessions where a no break space sneaks in place of a regular space.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (global-set-key (kbd "C-c w w") 'whitespace-mode)
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 
 ** Environment variables
@@ -87,9 +98,13 @@ I manage my Emacs theme with ~doom-themes~. Although I'm currently in love with 
     ;; Global settings (defaults)
     (setq doom-themes-enable-bold t
           doom-themes-enable-italic t
+          doom-nord-brighter-comments t
           doom-gruvbox-brighter-comments t
+          doom-dracula-colorful-headers t
+          doom-dracula-brighter-comments t
+          doom-dracula-comment-bg nil
           doom-gruvbox-dark-variant "hard")
-    (load-theme 'doom-gruvbox t)
+    (load-theme 'doom-dracula t)
 
     ;; Enable flashing mode-line on errors
     (doom-themes-visual-bell-config)
@@ -149,13 +164,13 @@ A beautiful modeline.
 
 *** Scrolling
 #+BEGIN_SRC emacs-lisp :results output silent
-    (pixel-scroll-precision-mode 1)
-    (pixel-scroll-mode 1)
-    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
-          mouse-wheel-progressive-speed nil ;; don't accelerate scrolling
-          mouse-wheel-follow-mouse 't ;; scroll window under mouse
-          scroll-step 0
-          scroll-conservatively 1000) ;; keyboard scroll one line at a time
+  (pixel-scroll-precision-mode 1)
+  (pixel-scroll-mode 1)
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
+        mouse-wheel-progressive-speed nil ;; don't accelerate scrolling
+        mouse-wheel-follow-mouse 't ;; scroll window under mouse
+        scroll-step 0
+        scroll-conservatively 1000) ;; keyboard scroll one line at a time
 #+END_SRC
 
 *** Transparency
@@ -169,6 +184,11 @@ This requires native Wayland compilation (Emacs >= 29).
 I do most of my work with Python so, by default, do not indent with tabs.
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq-default indent-tabs-mode nil)
+#+END_SRC
+
+*** Rainbow delimiters
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package rainbow-delimiters)
 #+END_SRC
 
 ** EMACS Dashboard:
@@ -189,9 +209,9 @@ I also ensure ~recentf-mode~ is enabled as the Dashboard includes recent files.
                             (agenda . 10)
                             (registers . 5))))
   (recentf-mode 1)
-          #+END_SRC
+#+END_SRC
 
-* Productivity modes
+* Productivity
 ** Browser
 I use plain EWW with a function to toggle images as navigating sites with images is clunky.
 #+BEGIN_SRC emacs-lisp :results output silent
@@ -302,6 +322,12 @@ I use plain EWW with a function to toggle images as navigating sites with images
         '((pre . eww-tag-pre)))
 #+END_SRC
 
+** Ripgrep
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package rg
+    :config (global-set-key (kbd "C-c s") #'rg-menu))
+#+END_SRC
+
 ** Windows
 Ace window allows me to visually change windows as an alternative to ~C-x o~:
 #+BEGIN_SRC emacs-lisp :results output silent
@@ -319,6 +345,9 @@ I use Magit to interact with git in Emacs.
     :config
     (setf epg-pinentry-mode 'loopback)
     (pinentry-start))
+
+  (use-package magit-todos
+    :after (magit))
 #+END_SRC
 
 ** Project management
@@ -455,18 +484,6 @@ Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://gi
     (setq counsel-dash-browser-func 'browse-url)
     (setq counsel-dash-ignored-docsets nil)
     (global-set-key (kbd "C-c c d") 'counsel-dash))
-#+END_SRC
-
-** Whitespace management
-Mostly for deleting trailing whitespace
-#+BEGIN_SRC emacs-lisp :results output silent
-  (global-set-key (kbd "C-c w w") 'whitespace-mode)
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
-#+END_SRC
-
-** Rainbows
-#+BEGIN_SRC emacs-lisp :results output silent
-  (use-package rainbow-delimiters)
 #+END_SRC
 
 ** Multiple cursors
@@ -952,12 +969,14 @@ Language server protocol for auto-completion with company-mode.
     :ensure t
     :config
     (apheleia-global-mode +1)
+    (setf (alist-get 'ruff apheleia-formatters)
+          '("ruff" "check" "--select" "I" "--fix" "-"))
     (setf (alist-get 'isort apheleia-formatters)
           '("isort" "--stdout" "-"))
     (setf (alist-get 'python-mode apheleia-mode-alist)
-          '(isort black))
+          '(ruff black))
     (setf (alist-get 'python-ts-mode apheleia-mode-alist)
-          '(isort black))
+          '(ruff black))
     )
 
   (use-package company
@@ -973,8 +992,9 @@ Language server protocol for auto-completion with company-mode.
 
   (use-package lsp-mode
     :init (setq lsp-keymap-prefix "C-c l")
-    :hook ((python-mode . lsp)
-           (python-ts-mode . lsp)
+    :config (setq lsp-modeline-diagnostics-mode 1)
+    :hook ((python-mode . lsp-deferred)
+           (python-ts-mode . lsp-deferred)
            (rust-ts-mode . lsp)
            (typescript-mode . lsp)
            (typescript-ts-mode . lsp)
@@ -984,12 +1004,13 @@ Language server protocol for auto-completion with company-mode.
     :commands lsp)
 
   (use-package lsp-ui
-    :config (setq
-             lsp-ui-sideline-show-diagnostics nil
+    :config (setq lsp-ui-sideline-show-diagnostics nil
              lsp-ui-sideline-show-hover nil
              lsp-ui-sideline-show-code-actions nil
              lsp-ui-doc-enable t
              lsp-ui-doc-show-with-cursor nil
+             lsp-ui-doc-show-with-mouse nil
+             lsp-ui-doc-position 'top
              lsp-ui-doc-delay 1)
     :bind ("C-c h" . lsp-ui-doc-toggle)
     :commands lsp-ui-mode)
@@ -1005,12 +1026,11 @@ Language server protocol for auto-completion with company-mode.
 
   (use-package lsp-pyright
     :ensure t
+    :after (lsp-mode)
     :hook ((python-mode . (lambda ()
-                           (require 'lsp-pyright)
-                           (lsp)))
-    (python-ts-mode . (lambda ()
-                     (require 'lsp-pyright)
-                     (lsp)))))
+                            (require 'lsp-pyright)))
+           (python-ts-mode . (lambda ()
+                               (require 'lsp-pyright)))))
 #+END_SRC
 
 ** Flycheck
