@@ -11,15 +11,15 @@
     margin-bottom: 1px;
 }
 
-@import "gruvbox.css";
+@import "dracula.css";
 
 window#waybar {
-    background: rgba(40, 40, 40, 0.8);
-    color: @fg;
+    background: @background-transparent;
+    color: @foreground;
 }
 
 window#waybar.empty {
-    background: rgba(40, 40, 40, 0.8);
+    background: @background-transparent;
     padding: 0px;
     border-radius: 0px;
 }
@@ -39,7 +39,7 @@ window#waybar.hidden {
 #window {
     background: transparent;
     font-family: mono;
-    color: @fg;
+    color: @foreground;
     padding: 0 5px;
     border-radius: 3px;
 }
@@ -50,7 +50,7 @@ window#waybar.hidden {
     margin-right: 0px;
     margin-left: 5px;
     border-radius: 3px;
-    color: @fg;
+    color: @foreground;
 }
 
 #workspaces button.visible {
@@ -58,22 +58,22 @@ window#waybar.hidden {
 }
 
 #workspaces button.focused {
-    background: @green_b;
-    color: @bg;
+    background: @purple;
+    color: @background;
 }
 
 #tray {
     padding: 0 5px;
     margin-left: 5px;
     margin-right: 5px;
-    color: @fg;
+    color: @foreground;
     border-radius: 3px;
 }
 
 #temperature, #clock, #battery, #cpu, #memory, #network, #pulseaudio {
     padding: 0 5px;
     margin-right: 5px;
-    color: @fg;
+    color: @foreground;
     border-radius: 3px;
 }
 
@@ -94,12 +94,12 @@ window#waybar.hidden {
 }
 
 #battery.charging, #battery.full {
-    background: @green_b;
+    background: @green;
 }
 
 @keyframes blink-critical {
     to {
-        background-color: @red_b;
+        background-color: @red;
         color: #1c1c1c;
     }
 }
