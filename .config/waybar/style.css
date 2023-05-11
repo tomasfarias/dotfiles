@@ -11,7 +11,7 @@
     margin-bottom: 1px;
 }
 
-@import "dracula.css";
+@import "tomorrow-night.css";
 
 window#waybar {
     background: @background-transparent;
@@ -58,7 +58,7 @@ window#waybar.hidden {
 }
 
 #workspaces button.focused {
-    background: @purple;
+    background: @green;
     color: @background;
 }
 

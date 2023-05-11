@@ -87,7 +87,7 @@ Ensure environment variables (like ~PATH~) are loaded from SHELL:
 
 * Aesthetics
 ** Theme
-I manage my Emacs theme with ~doom-themes~. Although I'm currently in love with Gruvbox, I like to swap things around from time to time, and ~doom-themes~ bundles up a lot of great themes for me to try.
+I manage my Emacs theme with ~doom-themes~. I like to swap things around from time to time, and ~doom-themes~ bundles up a lot of great themes for me to try.
 #+BEGIN_SRC emacs-lisp :results output silent :results output silent
   (use-package solaire-mode
     ;; Darkens "support" buffers (those not opening a file) to help distinguish them
@@ -99,12 +99,15 @@ I manage my Emacs theme with ~doom-themes~. Although I'm currently in love with 
     (setq doom-themes-enable-bold t
           doom-themes-enable-italic t
           doom-nord-brighter-comments t
-          doom-gruvbox-brighter-comments t
           doom-dracula-colorful-headers t
           doom-dracula-brighter-comments t
           doom-dracula-comment-bg nil
+          doom-solarized-dark-high-contrast-brighter-modeline nil
+          doom-solarized-dark-high-contrast-brighter-comments t
+          doom-solarized-dark-brighter-text t
+          doom-gruvbox-brighter-comments t
           doom-gruvbox-dark-variant "hard")
-    (load-theme 'doom-dracula t)
+    (load-theme 'doom-solarized-dark)
 
     ;; Enable flashing mode-line on errors
     (doom-themes-visual-bell-config)
@@ -770,8 +773,9 @@ The org mode itself.
 ** Bibliography and references
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq bibtex-completion-bibliography (list (concat org-directory "bibliography/references.bib"))
-        bibtex-completion-library-path (concat org-directory "bibliography/pdfs/")
+        bibtex-completion-library-path (concat org-directory "bibliography/pdfs")
         bibtex-completion-notes-path (concat org-directory "notes")
+        bibtex-completion-pdf-field "File"
         org-bibtex-file (list (concat org-directory "bibliography/references.bib"))
         bibtex-completion-notes-template-multiple-files ":PROPERTIES:\n:ID: ${id}\n:Custom_ID: ${=key=}\n:AUTHOR: ${author-or-editor}\n:ROAM_REFS: ${citekey}\n:BTYPE: \n:YEAR: ${year}\n:END:\n#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+DATE: %U\n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n")
 
@@ -782,9 +786,7 @@ The org mode itself.
           (inproceedings . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
           (t             . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*}")))
 
-  (setq bibtex-completion-pdf-open-function
-        (lambda (fpath)
-          (start-process "open" "*open*" "open" fpath)))
+  (setq bibtex-completion-pdf-open-function 'find-file)
 
   (use-package org-ref
     :after org-roam)
@@ -808,9 +810,6 @@ The org mode itself.
     :config
     (setq ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
                                   (t . ivy--regex-plus))
-          bibtex-completion-bibliography (concat org-directory "bibliography/references.bib")
-          bibtex-completion-pdf-field "File"
-          bibtex-completion-notes-path (concat org-directory "notes")
           bibtex-completion-additional-search-fields '(keywords))
     :bind
     (("C-c n B" . ivy-bibtex)))
@@ -841,6 +840,8 @@ The org mode itself.
     (:map org-mode-map :package org ("C-c n b" . #'org-cite-insert)))
 
   (org-roam-bibtex-mode)
+
+  (use-package pdf-tools)
 #+END_SRC
 
 ** Deft
@@ -998,6 +999,7 @@ Language server protocol for auto-completion with company-mode.
            (rust-ts-mode . lsp)
            (typescript-mode . lsp)
            (typescript-ts-mode . lsp)
+           (tsx-ts-mode . lsp)
            (go-mode . lsp)
            (go-ts-mode . lsp)
            (lsp-mode . lsp-enable-which-key-integration))
@@ -1080,16 +1082,8 @@ Language server protocol for auto-completion with company-mode.
 
 ** Typescript
 #+BEGIN_SRC emacs-lisp :results output silent
-  (use-package web-mode)
-  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode))
-  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-
   (setq typescript-ts-mode-indent-offset 4)
 
-  (use-package tide
-    :ensure t
-    :after (typescript-mode company flycheck)
-    :hook ((typescript-mode . tide-setup)
-           (typescript-mode . tide-hl-identifier-mode)
-           (before-save . tide-format-before-save)))
+  (use-package tsx-mode
+    :straight (:host github :repo "orzechowskid/tsx-mode.el" :branch "emacs29"))
 #+END_SRC

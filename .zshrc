@@ -23,9 +23,11 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Firefox Wayland
+# Wayland
 if [[ "$XDG_SESSION_TYPE" == "wayland" ]] ; then
     export MOZ_ENABLE_WAYLAND=1
+    export QT_QPA_PLATFORM=wayland
+    export ANKI_WAYLAND=1
 fi
 
 export EDITOR="emacsclient -c -a \"emacs\""
@@ -40,11 +42,8 @@ export PATH="$HOME/.rustup:$PATH"
 export PATH="/usr/local/go/bin:$PATH"
 export GOPATH="$HOME/.go"
 
-# PyENV settings
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-eval "$(pyenv virtualenv-init -)"
+# ASDF
+source /opt/asdf-vm/asdf.sh
 
 # Functions
 function startBwSession() {
@@ -57,6 +56,9 @@ alias cat="bat"
 alias gh-login="bw get item 'GitHub' | jq -r '.fields[1].value' | gh auth login --with-token"
 alias config="git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME"
 alias s="kitty +kitten ssh"
+
+# direnv
+source "${XDG_CONFIG_HOME:-$HOME/.config}/asdf-direnv/zshrc"
 
 # Startup starship prompt
 eval "$(starship init zsh)"
