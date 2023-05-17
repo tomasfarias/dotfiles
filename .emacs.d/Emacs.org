@@ -725,6 +725,9 @@ The org mode itself.
     :config (setq org-roam-directory org-directory)
     (org-roam-db-autosync-mode)
     (setq org-roam-db-location (concat org-roam-directory "org-roam.db")
+          org-roam-node-display-template
+          (concat "${title} "
+                  (propertize "${refs}" 'face 'org-ref-ref-face))
           org-roam-completion-everywhere t
           org-roam-capture-templates '(("l" "Literature note")
                                        ("lb" "Book" plain "%?"
