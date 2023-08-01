@@ -137,16 +137,31 @@ A beautiful modeline.
 ** Centaur-tabs
 Emacs tabs are already great, this package makes them look great too.
 #+BEGIN_SRC emacs-lisp :results output silent
+  (use-package all-the-icons
+    :if (display-graphic-p))
+
   (use-package centaur-tabs
     :demand
     :config (centaur-tabs-mode t)
     (centaur-tabs-headline-match)
-    (setq centaur-tabs-style "rounded"
+    (setq centaur-tabs-style "bar"
           centaur-tabs-set-icons t
-          centaur-tabs-set-bar 'over
+          centaur-tabs-set-bar 'under
           centaur-tabs-set-modified-marker t
-          centaur-tabs-height 64)
-    (centaur-tabs-group-by-projectile-project)
+          x-underline-at-descent-line t
+          centaur-tabs-height 32)
+    (defun centaur-tabs-buffer-groups ()
+      "`centaur-tabs-buffer-groups' control buffers' group rules."
+      (list
+       (cond
+        ((or (string-equal "*" (substring (buffer-name) 0 1))
+            (string-equal "Emacs.org" (buffer-name))
+            (string-equal "init.el" (buffer-name)))
+         "Emacs")
+        ((memq major-mode '(erc-mode))
+         "ERC")
+        (t
+         (centaur-tabs-get-group-name (current-buffer))))))
     :bind
     ("C-<prior>" . centaur-tabs-backward)
     ("C-<next>" . centaur-tabs-forward))
@@ -905,7 +920,7 @@ Set nickname, real-name, setup SASL, and define a function to connect to [[irc.l
      erc-prompt-for-password nil
      erc-server-auto-reconnect t
      erc-server-reconnect-timeout 15
-     erc-autojoin-channels-alist '(("Libera.Chat" "#emacs" "#python" "##rust" "#archlinux" "#archlinux-offtopic" "#reddit-sysadmin" "#linux" "#networking" "#security"))))
+     erc-autojoin-channels-alist '(("Libera.Chat" "#archlinux" "#archlinux-offtopic" "#emacs" "#gamingonlinux" "#linux" "#networking" "#python" "#reddit-sysadmin" "##rust" "#security"))))
 
   (defun tomas/erc-libera-start ()
     "Initialize Libera.Chat connection with auth-source credentials."
@@ -919,8 +934,9 @@ Set nickname, real-name, setup SASL, and define a function to connect to [[irc.l
      :full-name "Tomás Farías"))
 #+END_SRC
 
-* Language modes
+* Development
 ** Tree-sitter
+Tree-sitter comes bundled with Emacs, but I like to use [[https://github.com/renzmann/treesit-auto][treesit-auto]] to setup language modes I'm missing.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package treesit-auto
     :demand t
@@ -945,6 +961,13 @@ Set nickname, real-name, setup SASL, and define a function to connect to [[irc.l
            (rust-ts-mode . combobulate-mode)
            (go-ts-mode . combobulate-mode)
            (tsx-ts-mode . combobulate-mode)))
+#+END_SRC
+
+** Indent-bars
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package indent-bars
+    :straight (indent-bars :type git :host github :repo "jdtsmith/indent-bars")
+    :hook ((python-ts-mode yaml-ts-mode typescript-ts-mode js-ts-mode css-ts-mode rust-ts-mode go-ts-mode) . indent-bars-mode))
 #+END_SRC
 
 ** Python
@@ -1112,14 +1135,17 @@ Language server protocol for auto-completion with company-mode.
 
 ** Typescript
 #+BEGIN_SRC emacs-lisp :results output silent
+  (add-to-list 'auto-mode-alist '("\\.ts" . typescript-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.js" . javascript-ts-mode))
+
   (use-package tide
-  :ensure t
-  :after (company flycheck)
-  :config (setq
-           typescript-ts-mode-indent-offset 4
-           flycheck-check-syntax-automatically '(save mode-enabled))
-  :hook ((typescript-ts-mode . tide-setup)
-         (tsx-ts-mode . tide-setup)
-         (typescript-ts-mode . tide-hl-identifier-mode)
-         (before-save . tide-format-before-save)))
+    :ensure t
+    :after (company flycheck)
+    :config (setq
+             typescript-ts-mode-indent-offset 4
+             flycheck-check-syntax-automatically '(save mode-enabled))
+    :hook ((typescript-ts-mode . tide-setup)
+           (tsx-ts-mode . tide-setup)
+           (typescript-ts-mode . tide-hl-identifier-mode)
+           (before-save . tide-format-before-save)))
 #+END_SRC
