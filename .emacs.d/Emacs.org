@@ -65,7 +65,7 @@ Automatically revert buffers for changed files.
 
 Delete trailing whitespace and bind ~whitespace-mode~ for those rare debugging sessions where a no break space sneaks in place of a regular space.
 #+BEGIN_SRC emacs-lisp :results output silent
-  (global-set-key (kbd "C-c w w") 'whitespace-mode)
+  (global-set-key (kbd "C-c w") 'whitespace-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 
@@ -83,6 +83,17 @@ Ensure environment variables (like ~PATH~) are loaded from SHELL:
     (exec-path-from-shell-initialize))
 
   (setq-default explicit-shell-file-name "/bin/zsh")
+#+END_SRC
+
+** Scrolling
+#+BEGIN_SRC emacs-lisp :results output silent
+  (pixel-scroll-precision-mode 1)
+  (pixel-scroll-mode 1)
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
+        mouse-wheel-progressive-speed nil ;; don't accelerate scrolling
+        mouse-wheel-follow-mouse 't ;; scroll window under mouse
+        scroll-step 0
+        scroll-conservatively 1000) ;; keyboard scroll one line at a time
 #+END_SRC
 
 * Aesthetics
@@ -128,7 +139,7 @@ A beautiful modeline.
     :config (setq doom-modeline-height 40)
     (setq doom-modeline-hud nil)
     (setq doom-modeline-window-width-limit 100)
-    (setq nerd-icons-scale-factor 1.0)
+    (setq nerd-icons-scale-factor 0.85)
     (setq nerd-icons--default-adjust 0.0)
     (setq doom-modeline-icon t)
     :hook (after-init . doom-modeline-mode))
@@ -180,7 +191,7 @@ Emacs tabs are already great, this package makes them look great too.
     (set-face-attribute 'mode-line-active nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'normal :size 18 :height 0.8 :style 'extended))
     (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'normal :size 18 :height 0.8 :style 'extended))
     )
-
+  (tomas/setup-font-faces)
   (add-hook 'after-init-hook 'tomas/setup-font-faces)
   (add-hook 'server-after-make-frame-hook 'tomas/setup-font-faces)
 #+END_SRC
@@ -198,17 +209,6 @@ Emacs tabs are already great, this package makes them look great too.
   (setq make-pointer-invisible t)
 #+END_SRC
 
-*** Scrolling
-#+BEGIN_SRC emacs-lisp :results output silent
-  (pixel-scroll-precision-mode 1)
-  (pixel-scroll-mode 1)
-  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
-        mouse-wheel-progressive-speed nil ;; don't accelerate scrolling
-        mouse-wheel-follow-mouse 't ;; scroll window under mouse
-        scroll-step 0
-        scroll-conservatively 1000) ;; keyboard scroll one line at a time
-#+END_SRC
-
 *** Transparency
 This requires native Wayland compilation (Emacs >= 29).
 #+BEGIN_SRC emacs-lisp :results output silent
@@ -224,7 +224,11 @@ I do most of my work with Python so, by default, do not indent with tabs.
 
 *** Rainbow delimiters
 #+BEGIN_SRC emacs-lisp :results output silent
-  (use-package rainbow-delimiters)
+  (use-package rainbow-delimiters
+    :hook (python-ts-mode . rainbow-delimiters-mode)
+    (python-mode . rainbow-delimiters-mode)
+    (rustic-ts-mode . rainbow-delimiters-mode)
+    (rustic-mode . rainbow-delimiters-mode))
 #+END_SRC
 
 ** EMACS Dashboard:
@@ -335,10 +339,10 @@ I use plain EWW with a function to toggle images as navigating sites with images
                   (perl perl-mode)
                   (php php-mode)
                   (prolog prolog-mode)
-                  (python python-mode)
+                  (python python-ts-mode)
                   (r r-mode)
                   (ruby ruby-mode)
-                  (rust rustic-mode)
+                  (rust rustic-ts-mode)
                   (scala scala-mode)
                   (shell shell-script-mode)
                   (smalltalk smalltalk-mode)
@@ -377,7 +381,7 @@ Ace window allows me to visually change windows as an alternative to ~C-x o~:
 I use Magit to interact with git in Emacs.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package magit
-    :config (global-set-key (kbd "C-c g") 'magit-file-dispatch))
+    :config (setq magit-define-global-key-bindings 'recommended))
 
   (use-package pinentry
     :config
@@ -393,8 +397,9 @@ Projectile manages my projects.
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package projectile
     :diminish projectile-mode
-    :init (setq projectile-keymap-prefix (kbd "C-c p"))
-    :config (projectile-global-mode))
+    :bind-keymap ("C-c p" . projectile-command-map)
+    :config (projectile-global-mode)
+    (setq projectile-project-search-path '(("~/src/github.com/" . 2))))
 #+END_SRC
 
 ** Treemacs
@@ -465,6 +470,7 @@ Ivy includes swiper, counsel, and ivy itself. These replace some standard comman
     :config
     (counsel-mode)
     (global-set-key (kbd "M-x") 'counsel-M-x)
+    (global-set-key (kbd "M-y") 'counsel-yank-pop)
     (global-set-key (kbd "C-x C-f") 'counsel-find-file)
     (global-set-key (kbd "C-c c f") 'counsel-describe-function)
     (global-set-key (kbd "C-c c v") 'counsel-describe-variable)
@@ -526,7 +532,7 @@ Explore [[https://www.kapeli.com/dash][Dash]] docsets in Emacs with [[https://gi
     (setq counsel-dash-candidate-format "%d %n (%t)")
     (setq counsel-dash-enable-debugging nil)
     (setq counsel-dash-common-docsets '("Python 3" "Rust"))
-    (setq counsel-dash-browser-func 'browse-url)
+    (setq counsel-dash-browser-func 'eww)
     (setq counsel-dash-ignored-docsets nil)
     (global-set-key (kbd "C-c c d") 'counsel-dash))
 #+END_SRC
@@ -564,6 +570,115 @@ In an effort to move everything to Emacs, I'm switching from an RSS reader in my
     (elfeed))
 
   (global-set-key (kbd "C-c r d") 'tomas/elfeed)
+#+END_SRC
+
+** Hydra
+A lot of useful Emacs packages have plenty of functionality packed into them. It's hard to remember that many keybinds, so I use Hydra as an index to some of them.
+#+BEGIN_SRC emacs-lisp :results output silent
+    (use-package hydra)
+#+END_SRC
+
+*** Counsel
+Of course I have memorized ~counsel-find-file~ but I always forget ~counsel-dash-docs~ and all the ~counsel-describe-*~ functions when I need them.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defhydra hydra-counsel (:color blue)
+    "
+    ^
+    ^Find^              ^Describe^          ^Docs^
+    ^────^──────────────^────────^──────────^────^──────────────
+    _F_ file            _f_ function        _d_ docs
+    _l_ library         _v_ variable        _p_ docs-at-point
+    _u_ unicode-char    _o_ symbol          _a_ activate
+    ^^                  ^^                  _i_ install
+    "
+    ("F" counsel-find-file)
+    ("l" counsel-find-library)
+    ("u" counsel-unicode-char)
+    ("d" counsel-dash)
+    ("p" counsel-dash-at-point)
+    ("i" counsel-dash-install-docset :color red)
+    ("a" counsel-dash-activate-docset :color red)
+    ("f" counsel-describe-function)
+    ("v" counsel-describe-variable)
+    ("o" counsel-describe-symbol))
+
+  (global-set-key (kbd "C-c C") 'hydra-counsel/body)
+#+END_SRC
+
+*** Projectile
+Most if not all of my projectile workflow happens with these commands.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defhydra hydra-projectile (:color blue)
+  "
+  ^
+  ^Projectile^        ^Buffers^           ^Find^              ^Search^            ^Run^
+  ^──────────^────────^───────^───────────^────^──────────────^──────^────────────^───^───────────────
+  _q_ quit            _b_ list            _d_ directory       _r_ replace         _!_ shell command
+  _i_ reset cache     _k_ kill all        _D_ root            _R_ regexp replace  _&_ shell async command
+  ^^                  _S_ save all        _f_ file            _s_ search          _c_ compile
+  ^^                  ^^                  _p_ project         ^^                  _t_ test
+  ^^                  ^^                  _T_ test file       ^^                  _z_ term
+  "
+    ("q" nil)
+    ("b" projectile-switch-to-buffer)
+    ("d" projectile-find-dir)
+    ("D" projectile-dired)
+    ("f" projectile-find-file)
+    ("i" projectile-invalidate-cache :color red)
+    ("k" projectile-kill-buffers)
+    ("p" projectile-switch-project)
+    ("r" projectile-replace :color red)
+    ("R" projectile-replace-regexp :color red)
+    ("s" projectile-ripgrep :color red)
+    ("S" projectile-save-project-buffers)
+    ("!" projectile-run-shell-command-in-root)
+    ("&" projectile-run-async-shell-command-in-root)
+    ("c" projectile-compile-project)
+    ("t" projectile-test-project)
+    ("T" projectile-find-test-file)
+    ("t" projectile-test-project)
+    ("z" projectile-run-term))
+
+  (global-set-key (kbd "C-c P") 'hydra-projectile/body)
+#+END_SRC
+
+*** LSP
+LSP-mode is what makes Emacs a fully featured IDE, and I will never remember everything that I can do with it. Solution: Pop a Hydra and see what heads are available at a glance.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defhydra hydra-lsp (:color blue)
+    "
+    ^
+    ^Buffer^                ^Server^                ^Symbol^
+    ^──────^────────────────^──────^────────────────^──────^────────────────
+    _f_ format              _M-r_ restart           _d_ declaration
+    _m_ imenu               _M-s_ shutdown          _D_ definition
+    _x_ execute action      _M-d_ describe session  _R_ references
+    ^^                      _M-u_ update            _i_ implementation
+    ^^                      _M-i_ install           _s_ signature
+    ^^                      ^^                      _t_ type
+    ^^                      ^^                      _o_ documentation
+    ^^                      ^^                      _r_ rename
+    "
+      ("d" lsp-find-declaration)
+      ("D" lsp-ui-peek-find-definitions)
+      ("R" lsp-ui-peek-find-references)
+      ("i" lsp-ui-peek-find-implementation)
+      ("s" lsp-signature-help)
+      ("t" lsp-find-type-definition)
+      ("o" lsp-describe-thing-at-point)
+      ("r" lsp-rename)
+
+      ("f" lsp-format-buffer)
+      ("m" lsp-ui-imenu)
+      ("x" lsp-execute-code-action)
+
+      ("M-d" lsp-describe-session :color red)
+      ("M-r" lsp-restart-workspace :color red)
+      ("M-u" lsp-update-server :color red)
+      ("M-i" lsp-install-server :color red)
+      ("M-s" lsp-shutdown-workspace))
+
+  (global-set-key (kbd "C-c L") 'hydra-lsp/body)
 #+END_SRC
 
 * Everything org
@@ -738,15 +853,11 @@ The org mode itself.
 ** Templates
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq org-capture-templates
-        '(("i" "Inbox" entry (file org-inbox-file)
-           "* TODO %?
+        '(("i" "📥 Inbox" entry (file org-inbox-file)
+           "* %?
             SCHEDULED: %t
             DEADLINE: %t")
-          ("w" "Work inbox" entry (file org-work-inbox-file)
-           "* TODO %?
-            SCHEDULED: %t
-            DEADLINE: %t")
-          ("j" "Journal" plain (function org-journal-find-location)
+          ("j" "📔 Journal" plain (function org-journal-find-location)
            "** %(format-time-string org-journal-time-format)%^{Title}\n%i%?"
            :jump-to-captured t
            :immediate-finish t)))
@@ -999,6 +1110,17 @@ Boy do I love Jenkins.
     (setq groovy-indent-offset 2))
 #+END_SRC
 
+** GDScript
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package gdscript-mode
+    :straight (gdscript-mode
+               :type git
+               :host github
+               :repo "godotengine/emacs-gdscript-mode"))
+
+  (add-to-list 'auto-mode-alist '("\\.gd" gdscript-ts-mode))
+#+END_SRC
+
 ** Markdown
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package markdown-mode
@@ -1055,6 +1177,7 @@ Language server protocol for auto-completion with company-mode.
            (tsx-ts-mode . lsp)
            (go-mode . lsp)
            (go-ts-mode . lsp)
+           (gdscript-ts-mode . lsp)
            (lsp-mode . lsp-enable-which-key-integration))
     :commands lsp)
 
