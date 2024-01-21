@@ -183,13 +183,13 @@ Emacs tabs are already great, this package makes them look great too.
 #+BEGIN_SRC emacs-lisp :results output silent
   (defun tomas/setup-font-faces ()
     (setq-default line-spacing 1)
-    (set-face-attribute 'default nil :font (font-spec :family "Iosevka Fixed SS18" :size 18 :weight 'medium :style 'extended))
-    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "Iosevka Fixed SS18" :size 18 :weight 'medium :style 'extended))
-    (set-face-attribute 'variable-pitch nil :font (font-spec :family "Iosevka Aile" :size 18 :weight 'medium))
+    (set-face-attribute 'default nil :font (font-spec :family "Iosevka Fixed SS18" :size 18 :weight 'medium :style 'normal))
+    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "Iosevka Fixed SS18" :size 18 :weight 'medium :style 'normal))
+    (set-face-attribute 'variable-pitch nil :font (font-spec :family "Iosevka Etoile" :size 16 :weight 'medium))
 
-    (set-face-attribute 'mode-line nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'normal :size 18 :height 0.8 :style 'extended))
-    (set-face-attribute 'mode-line-active nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'normal :size 18 :height 0.8 :style 'extended))
-    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'normal :size 18 :height 0.8 :style 'extended))
+    (set-face-attribute 'mode-line nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'medium :size 18 :height 1 :style 'normal))
+    (set-face-attribute 'mode-line-active nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'medium :size 18 :height 1 :style 'normal))
+    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Iosevka Fixed SS18" :weight 'medium :size 18 :height 1 :style 'normal))
     )
   (tomas/setup-font-faces)
   (add-hook 'after-init-hook 'tomas/setup-font-faces)
@@ -776,9 +776,19 @@ The org mode itself.
            ("C-c o c" . org-capture)
            ("C-M-|" . indent-rigidly))
     :config
+    (add-hook 'org-mode-hook
+              '(lambda ()
+                 (variable-pitch-mode 1)
+                 (mapc
+                  (lambda (face) ;; Rescale and inherit the properties from the fixed-pitch font.
+                    (set-face-attribute face nil :inherit 'fixed-pitch))
+                  (list 'org-code 'org-link 'org-block 'org-table 'org-property-value 'org-formula
+                        'org-tag 'org-verbatim 'org-date 'company-tooltip
+                        'org-special-keyword 'org-block-begin-line
+                        'org-meta-line
+                        'org-document-info-keyword))))
     (add-hook 'org-mode-hook 'line-spacing-hook)
     (add-hook 'org-mode-hook 'visual-line-mode)
-    (add-hook 'org-mode-hook 'line-spacing-hook)
     (add-hook 'org-mode-hook 'flyspell-mode))
 
   (custom-set-faces
@@ -793,61 +803,64 @@ The org mode itself.
 
 ** Additional org packages
 #+BEGIN_SRC emacs-lisp :results output silent
-  (use-package org-preview-html)
+    (use-package org-preview-html)
 
-  (use-package org-fragtog
-    :config (add-hook 'org-mode-hook 'org-fragtog-mode))
+    (use-package org-fragtog
+      :config (add-hook 'org-mode-hook 'org-fragtog-mode))
 
-  (use-package org-superstar
-    :config (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
+    (use-package org-superstar
+      :config (add-hook 'org-mode-hook (lambda () (org-superstar-mode 1))))
 
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((lisp . t)
-     (emacs-lisp :results output silent . t)
-     (latex . t)
-     (python . t)
-     (shell . t)))
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((lisp . t)
+       (emacs-lisp :results output silent . t)
+       (latex . t)
+       (python . t)
+       (shell . t)))
 
-  (use-package org-super-agenda
-    :config (org-super-agenda-mode))
+    (use-package org-super-agenda
+      :config (org-super-agenda-mode))
 
-  (use-package org-journal
-    :commands (org-journal-new-entry org-capture)
-    :after (org-capture)
-    :bind (("C-c o j" . org-journal-new-entry))
-    :custom
-    (org-journal-dir org-journal-dir)
-    (org-journal-date-format "%A, %d %B %Y")
-    (org-journal-enable-agenda-integration t))
+    (use-package org-journal
+      :commands (org-journal-new-entry org-capture)
+      :after (org-capture)
+      :bind (("C-c o j" . org-journal-new-entry))
+      :custom
+      (org-journal-dir org-journal-dir)
+      (org-journal-date-format "%A, %d %B %Y")
+      (org-journal-enable-agenda-integration t))
 
-  (defun org-journal-find-location ()
-    ;; Open today's journal, but specify a non-nil prefix argument in order to
-    ;; inhibit inserting the heading; org-capture will insert the heading.
-    (org-journal-new-entry t)
-    (unless (eq org-journal-file-type 'daily)
-      (org-narrow-to-subtree))
-    (goto-char (point-max)))
+    (defun org-journal-find-location ()
+      ;; Open today's journal, but specify a non-nil prefix argument in order to
+      ;; inhibit inserting the heading; org-capture will insert the heading.
+      (org-journal-new-entry t)
+      (unless (eq org-journal-file-type 'daily)
+        (org-narrow-to-subtree))
+      (goto-char (point-max)))
 
-  (plist-put org-format-latex-options :scale 1.75)
+    (plist-put org-format-latex-options :scale 1.75)
 
-  (use-package org-drill
-    :bind (("C-c o d" . org-drill))
-    :config
-    (setq org-drill-hide-item-headings-p t
-          org-drill-maximum-duration 30
-          org-drill-maximum-items-per-session nil
-          org-drill-add-random-noise-to-intervals-p t
-          org-drill-adjust-intervals-for-early-and-late-repetitions-p t))
+    (use-package org-drill
+      :bind (("C-c o d" . org-drill))
+      :config
+      (setq org-drill-hide-item-headings-p t
+            org-drill-maximum-duration 30
+            org-drill-maximum-items-per-session nil
+            org-drill-add-random-noise-to-intervals-p t
+            org-drill-adjust-intervals-for-early-and-late-repetitions-p t))
 
-  (defun tomas/org-drill-tag (tag)
-    "Start org-drill with a user chosen question tag."
-    (interactive "Input the tag to drill: ")
-    (custom-set-variables
-     '(org-drill-question-tag tag))
-    (org-drill)
-    (custom-set-variables
-     '(org-drill-question-tag "drill")))
+    (defun tomas/org-drill-tag (tag)
+      "Start org-drill with a user chosen question tag."
+      (interactive "Input the tag to drill: ")
+      (custom-set-variables
+       '(org-drill-question-tag tag))
+      (org-drill)
+      (custom-set-variables
+       '(org-drill-question-tag "drill")))
+
+  (use-package org-present
+    :bind (("C-c o p" . org-present)))
 #+END_SRC
 
 ** Templates
@@ -1138,77 +1151,93 @@ Boy do I love Jenkins.
     ("\\.yaml\\'" . yaml-mode))
 #+END_SRC
 
-** LSP
-Language server protocol for auto-completion with company-mode.
+** Apheleia
 #+BEGIN_SRC emacs-lisp :results output silent
+  (use-package direnv
+    :config
+    (direnv-mode))
+
   (use-package apheleia
     :ensure t
     :config
+    (setf apheleia-log-debug-info t)
     (apheleia-global-mode +1)
-    (setf (alist-get 'ruff apheleia-formatters)
-          '("ruff" "check" "--select" "I" "--fix" "-"))
+    (setf (alist-get 'rufffmt apheleia-formatters)
+          '("ruff" "format" "--verbose" "--stdin-filename" filepath "-"))
+    (setf (alist-get 'rufflint apheleia-formatters)
+          ;; In case ruff cannot fix, then ignore and exit with 0
+          '("ruff" "--silent" "check" "--fix" "--exit-zero" "--stdin-filename" filepath "--extend-select" "I" "-"))
     (setf (alist-get 'isort apheleia-formatters)
           '("isort" "--stdout" "-"))
     (setf (alist-get 'python-mode apheleia-mode-alist)
-          '(ruff black))
+          '(rufffmt rufflint))
     (setf (alist-get 'python-ts-mode apheleia-mode-alist)
-          '(ruff black))
-    )
+          '(rufffmt rufflint))
+    (setf (alist-get 'rustfmt apheleia-formatters)
+          '("rustfmt" "--edition" "2021" "--quiet" "--emit" "stdout"))
+    (setf (alist-get 'rustic-mode apheleia-mode-alist)
+          '(rustfmt))
+    (setf (alist-get 'rustic-ts-mode apheleia-mode-alist)
+          '(rustfmt)))
+#+END_SRC
 
-  (use-package company
-    :config (add-hook 'after-init-hook 'global-company-mode)
-    (setq company-idle-delay 1
-          company-minimum-prefix-length 1
-          company-selection-wrap-around t
-          company-show-numbers 1)
-    (define-key company-active-map (kbd "C-n") 'company-select-next)
-    (define-key company-active-map (kbd "C-p") 'company-select-previous)
-    (define-key company-active-map (kbd "M-<") 'company-select-first)
-    (define-key company-active-map (kbd "M->") 'company-select-last))
+** LSP
+Language server protocol for auto-completion with company-mode.
+#+BEGIN_SRC emacs-lisp :results output silent
+    (use-package company
+      :config (add-hook 'after-init-hook 'global-company-mode)
+      (setq company-idle-delay 1
+            company-minimum-prefix-length 1
+            company-selection-wrap-around t
+            company-show-numbers 1)
+      (define-key company-active-map (kbd "C-n") 'company-select-next)
+      (define-key company-active-map (kbd "C-p") 'company-select-previous)
+      (define-key company-active-map (kbd "M-<") 'company-select-first)
+      (define-key company-active-map (kbd "M->") 'company-select-last))
 
-  (use-package lsp-mode
-    :init (setq lsp-keymap-prefix "C-c l")
-    :config (setq lsp-modeline-diagnostics-mode 1)
-    :hook ((python-mode . lsp-deferred)
-           (python-ts-mode . lsp-deferred)
-           (rust-ts-mode . lsp)
-           (typescript-mode . lsp)
-           (typescript-ts-mode . lsp)
-           (tsx-ts-mode . lsp)
-           (go-mode . lsp)
-           (go-ts-mode . lsp)
-           (gdscript-ts-mode . lsp)
-           (lsp-mode . lsp-enable-which-key-integration))
-    :commands lsp)
+    (use-package lsp-mode
+      :init (setq lsp-keymap-prefix "C-c l")
+      :config (setq lsp-modeline-diagnostics-mode 1)
+      :hook ((python-mode . lsp-deferred)
+             (python-ts-mode . lsp-deferred)
+             (rust-ts-mode . lsp)
+             (typescript-mode . lsp)
+             (typescript-ts-mode . lsp)
+             (tsx-ts-mode . lsp)
+             (go-mode . lsp)
+             (go-ts-mode . lsp)
+             (gdscript-ts-mode . lsp)
+             (lsp-mode . lsp-enable-which-key-integration))
+      :commands lsp)
 
-  (use-package lsp-ui
-    :config (setq lsp-ui-sideline-show-diagnostics nil
-             lsp-ui-sideline-show-hover nil
-             lsp-ui-sideline-show-code-actions nil
-             lsp-ui-doc-enable t
-             lsp-ui-doc-show-with-cursor nil
-             lsp-ui-doc-show-with-mouse nil
-             lsp-ui-doc-position 'top
-             lsp-ui-doc-delay 1)
-    :bind ("C-c h" . lsp-ui-doc-toggle)
-    :commands lsp-ui-mode)
+    (use-package lsp-ui
+      :config (setq lsp-ui-sideline-show-diagnostics nil
+               lsp-ui-sideline-show-hover nil
+               lsp-ui-sideline-show-code-actions nil
+               lsp-ui-doc-enable t
+               lsp-ui-doc-show-with-cursor nil
+               lsp-ui-doc-show-with-mouse nil
+               lsp-ui-doc-position 'top
+               lsp-ui-doc-delay 1)
+      :bind ("C-c h" . lsp-ui-doc-toggle)
+      :commands lsp-ui-mode)
 
-  (use-package lsp-ivy
-    :commands lsp-ivy-workspace-symbol)
+    (use-package lsp-ivy
+      :commands lsp-ivy-workspace-symbol)
 
-  (use-package lsp-treemacs
-    :commands lsp-treemacs-errors-list)
+    (use-package lsp-treemacs
+      :commands lsp-treemacs-errors-list)
 
-  (use-package which-key
-    :config (which-key-mode))
+    (use-package which-key
+      :config (which-key-mode))
 
-  (use-package lsp-pyright
-    :ensure t
-    :after (lsp-mode)
-    :hook ((python-mode . (lambda ()
-                            (require 'lsp-pyright)))
-           (python-ts-mode . (lambda ()
-                               (require 'lsp-pyright)))))
+    (use-package lsp-pyright
+      :ensure t
+      :after (lsp-mode)
+      :hook ((python-mode . (lambda ()
+                              (require 'lsp-pyright)))
+             (python-ts-mode . (lambda ()
+                                 (require 'lsp-pyright)))))
 #+END_SRC
 
 ** Flycheck
