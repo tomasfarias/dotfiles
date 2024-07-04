@@ -1,0 +1,32 @@
+#+ TITLE: Emacs: Interface configuration
+#+ AUTHOR: Tomás Farías Santana
+
+This literate configuration sets up [[https://www.gnu.org/software/emacs/erc.html][ERC]], the Emacs IRC client. Note that this requires ~auth-sources~ to be setup, as authentication credentials for [[irc.libera.chat][irc.libera.chat]] are stored there.
+
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package erc
+    :config
+    (setopt
+     erc-sasl-mechanism 'plain
+     erc-sasl-auth-source-function #'erc-sasl-auth-source-password-as-host)
+
+    (setq
+     erc-nick "tomasfarias"
+     erc-prompt-for-password nil
+     erc-server-auto-reconnect t
+     erc-server-reconnect-timeout 15
+     erc-autojoin-channels-alist '(("Libera.Chat" "#archlinux" "#archlinux-offtopic" "#emacs" "#gamingonlinux" "#linux" "#networking" "#python" "#reddit-sysadmin" "##rust" "#security"))))
+
+  (defun tomas/erc-libera-start ()
+    "Initialize Libera.Chat connection with auth-source credentials."
+    (interactive)
+    (erc-tls
+     :server "irc.libera.chat"
+     :port 6697
+     :nick "tomasfarias"
+     :user "tomasfarias"
+     :password "irc.libera.chat"
+     :full-name "Tomás Farías"))
+
+  (global-set-key (kbd "C-c t i") 'tomas/erc-libera-start)
+#+END_SRC

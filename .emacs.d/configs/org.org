@@ -1,0 +1,346 @@
+#+ TITLE: Emacs: Interface configuration
+#+ AUTHOR: Tomás Farías Santana
+
+This literate configuration deals with setting up the org-mode ecosystem. Org-mode does a lot of things, and configuring it can be quite daunting.
+
+* Org-mode setup
+This section includes variables and functions needed for all features of org-mode to work. We start with directory variables:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defconst org-directory "~/src/github.com/tomasfarias/org/"
+    "Org-mode directory and repo, where most of the org-mode files lives")
+  (defconst org-projects-dir (expand-file-name "projects" org-directory)
+    "Project-specific tasks directory.")
+  (defconst org-notes-dir (expand-file-name "notes" org-directory)
+    "Directory of shareable, technical notes.")
+  (defconst org-journal-dir (expand-file-name "journal" org-directory)
+    "Directory of journal notes.")
+  (defconst org-inbox-file (expand-file-name "Inbox.org" org-directory)
+    "New stuff collected in this file.")
+  (defconst org-work-inbox-file (expand-file-name "WorkInbox.org" org-directory)
+    "New work-related stuff collected in this file.")
+  (defconst org-babel-library-file (expand-file-name "org_library_of_babel.org" org-notes-dir)
+    "Org babel library.")
+#+END_SRC
+
+We continue by setting up some common tags:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq org-tag-alist '(
+                        ;; locale
+                        (:startgroup)
+                        ("home" . ?h)
+                        ("work" . ?w)
+                        ("study" . ?s)
+                        (:endgroup)
+                        (:newline)
+                        ;; scale
+                        (:startgroup)
+                        ("one-shot" . ?o)
+                        ("small" . ?t)
+                        ("medium" . ?j)
+                        ("large" . ?j)
+                        (:endgroup)
+                        (:newline)
+                        ;; misc
+                        ("meta")
+                        ("review")
+                        ("reading")))
+#+END_SRC
+
+The following function enables ~variable-pitch-mode~, but keeps ~fixed-pitch~ on certain faces that work best on fixed pitch, like code, tables, or links:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun tomas/org-variable-pitch-mode ()
+    "Enable `variable-pitch-mode' in org but keep using fixed-pitch in certain font faces."
+    (interactive)
+    (variable-pitch-mode t)
+    (mapc
+     (lambda (face)
+       (set-face-attribute face nil :inherit 'fixed-pitch))
+     (list
+      'org-code
+      'org-link
+      'org-block
+      'org-table
+      'org-property-value
+      'org-formula
+      'org-tag
+      'org-verbatim
+      'org-date
+      'org-special-keyword
+      'org-block-begin-line
+      'org-meta-line
+      'org-document-info-keyword)))
+#+END_SRC
+
+The following function updates the line spacing in org files:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun tomas/org-line-spacing ()
+    (setq line-spacing 2))
+#+END_SRC
+
+* Org
+The initial setup for org mode deals with improving the writing experience with some settings and hooks.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org
+    :config
+    ;; General navigation, emphasis, and writing configuration
+    (setq org-hide-emphasis-markers t)
+    (setq org-highlight-latex-and-related '(latex script entities))
+    (setq org-pretty-entities t)
+    (setq org-link-descriptive t)
+    (setq org-return-follows-link t)
+    (setq org-src-fontify-natively t)
+    (setq org-src-tab-acts-natively t) ; in code blocks, TAB behaves like the major-mode binding
+    (setq org-startup-indented t) ; enables org-indent-mode which indents text in higher level headings
+    (setq org-use-speed-commands t) ; enables the use of single letter commands when positioned on a heading
+    (setq org-use-sub-superscripts "{}") ; require using '{}' when writing sub or superscripts
+
+    ;; Refile configuration
+    (setq org-outline-path-complete-in-steps nil)
+    (setq org-refile-use-outline-path 'file)
+
+    (setq org-capture-templates
+          '(("i" "📥 Inbox" entry (file org-inbox-file)
+             "* TODO %?\n%U\n%i")
+            ("r" "📥 Inbox with reference" entry (file org-inbox-file)
+             "* TODO %?\n%U\n%a\n%i")
+            ;; Define a work section, these go to work inbox file
+            ("w" "Work")
+            ("wi" "💼 Work inbox" entry (file org-work-inbox-file)
+             "* TODO %?\n%U\n%i")))
+
+    :hook
+    ((org-mode . tomas/org-variable-pitch-mode)
+     (org-mode . tomas/org-line-spacing)
+     (org-mode . visual-line-mode) ; wrap lines at word-breaks
+     (org-mode . jinx-mode)) ; ensure jinx spell checking
+    :bind
+    (:map global-map
+          ("C-c o a" . org-agenda)
+          ("C-c o c" . org-capture)
+          ("C-c o l i" . org-insert-link-global)
+          ("C-c o r" . org-refile)
+          ("C-c o l s" . org-store-link)))
+
+#+END_SRC
+
+Next, we configure org agenda for task management. Initially, we install ~org-super-agenda~ to enable some customization of the agenda view.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org-super-agenda
+    :hook
+    (org-mode . org-super-agenda-mode))
+#+END_SRC
+
+Then, we can setup the agenda, in particular custom commands.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org
+    :config
+    ;; Agenda configuration
+    (setq org-agenda-compact-blocks nil)
+    (setq org-agenda-files nil)
+    (setq org-agenda-include-diary t)
+    (setq org-agenda-skip-scheduled-if-done nil)
+    (setq org-agenda-span 10)
+    (setq org-agenda-start-on-weekday 1)
+    (setq org-agenda-sticky t)
+    (setq org-agenda-window-setup 'other-window)
+    (setq org-agenda-time-grid
+          '(
+            (daily today)
+            (800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900)
+            "...... "
+            "------------------"))
+
+    (setq org-agenda-custom-commands
+          '(("A" "Agenda"
+             ((agenda ""
+                      ((org-agenda-overriding-header "Today's agenda\n")
+                       (org-agenda-span 'day)
+                       (org-agenda-format-date "%A, %-e %B %Y")
+                       (org-super-agenda-groups
+                        '((:name "Today"
+                                 :time-grid t
+                                 :date today
+                                 :todo "TODAY"
+                                 :scheduled today
+                                 :order 0)
+                          (:discard (:anything t))
+                          ))
+                       )
+                      )
+              (alltodo ""
+                       ((org-agenda-overriding-header "\nTasks")
+                        (org-agenda-sorting-strategy '(deadline-up))
+                        (org-super-agenda-groups
+                         '((:name "Current"
+                                  :todo ("STARTED")
+                                  :order 0)
+                           (:name "Waiting"
+                                  :todo ("WAITING")
+                                  :order 1)
+                           (:name "To do"
+                                  :todo ("TODO")
+                                  :order 2)
+                           ))
+                        )
+                       )
+              (todo "DONE"
+                         ((org-agenda-overriding-header "\nRecently done")
+                          (org-agenda-sorting-strategy '(timestamp-down))
+                          (org-super-agenda-groups
+                           '((:name none :take (10 (:anything)))
+                             ))
+                          )
+                         )
+              (todo "OBSOLETE"
+                         ((org-agenda-overriding-header "\nRecently discarded")
+                          (org-agenda-sorting-strategy '(timestamp-down))
+                          (org-super-agenda-groups
+                           '((:name none :take (10 (:anything)))
+                             ))
+                          )
+                         )
+              )
+
+             ((org-agenda-files (append (ensure-list org-work-inbox-file) (ensure-list org-inbox-file)))
+              (org-agenda-block-separator 9472))
+             )
+            ("w" "Work agenda"
+             ((agenda ""
+                      ((org-agenda-overriding-header "Today's agenda\n")
+                       (org-agenda-span 'day)
+                       (org-agenda-format-date "%A, %-e %B %Y")
+                       (org-super-agenda-groups
+                        '((:name "Today"
+                                 :time-grid t
+                                 :date today
+                                 :todo "TODAY"
+                                 :scheduled today
+                                 :order 0)
+                          (:discard (:anything t))
+                          ))
+                       )
+                      )
+              (alltodo ""
+                       ((org-agenda-overriding-header "\nTasks")
+                        (org-agenda-sorting-strategy '(deadline-up))
+                        (org-super-agenda-groups
+                         '((:name "Current"
+                                  :todo ("STARTED")
+                                  :order 0)
+                           (:name "Waiting"
+                                  :todo ("WAITING")
+                                  :order 1)
+                           (:name "To do"
+                                  :todo ("TODO")
+                                  :order 2)
+                           ))
+                        )
+                       )
+              (todo "DONE"
+                         ((org-agenda-overriding-header "\nRecently done")
+                          (org-agenda-sorting-strategy '(timestamp-down))
+                          (org-super-agenda-groups
+                           '((:name none :take (10 (:anything)))
+                             ))
+                          )
+                         )
+              (todo "OBSOLETE"
+                         ((org-agenda-overriding-header "\nRecently discarded")
+                          (org-agenda-sorting-strategy '(timestamp-down))
+                          (org-super-agenda-groups
+                           '((:name none :take (10 (:anything)))
+                             ))
+                          )
+                         )
+              )
+
+             ((org-agenda-files (ensure-list org-work-inbox-file))
+              (org-agenda-block-separator 9472))
+             )))
+    ;; Task configuration
+    (setq org-fontify-done-headline t)
+    (setq org-log-done 'time) ; log timestamp when task done
+    (setq org-log-into-drawer t)
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "WAITING(w@/!)" "STARTED(s!)" "|" "DONE(d!)" "OBSOLETE(o@)"))))
+
+#+END_SRC
+
+* Extensions
+** Org-appear
+Although hiding markup markers is better for readability, which I want to emphasize with org-mode, editing said markers becomes cumbersome when they are hidden. The [[https://github.com/awth13/org-appear][org-appear]] package addresses this problem by expanding markers after a brief delay when the cursor is on top of the element.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org-appear
+    :config
+    (setq org-appear-trigger 'always)
+    (setq org-appear-delay 0.2)
+    (setq org-appear-autoemphasis t)
+    (setq org-appear-inside-latex t)
+    (setq org-appear-autosubmarkers t)
+    (setq org-appear-autolinks t)
+    (setq org-appear-autoentities t)
+    ;; The following is required due to a bug in org-appear
+    ;; Remove it once bug is fixed: https://github.com/awth13/org-appear/issues/53
+    (setq org-fold-core-style 'text-properties)
+
+    :hook
+    (org-mode . org-appear-mode))
+#+END_SRC
+
+Make org-mode look good with [[https://github.com/minad/org-modern][org-modern]].
+** Org-modern
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org-modern
+    :config
+    (setq org-modern-star 'replace) ;; replaces heading stars instead of using folding indicators
+    :hook
+    ((org-mode . org-modern-mode)))
+#+END_SRC
+
+** Org-roam
+Variables that must be set for org-roam to work correctly.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq org-roam-directory org-directory)
+  (setq org-roam-index-file (concat org-roam-directory "index.org"))
+  (setq org-roam-db-location (concat org-roam-directory "org-roam.db"))
+#+END_SRC
+
+And the configuration for org-roam:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org-roam
+    :config
+    (org-roam-db-autosync-mode)
+    (setq org-roam-completion-everywhere t)
+
+    ;; Dedicated side window for backlinks
+    (add-to-list 'display-buffer-alist
+                 '("\\*org-roam\\*"
+                   (display-buffer-in-side-window)
+                   (side . right)
+                   (window-width . 0.4)
+                   (window-height . fit-window-to-buffer)))
+
+    ;; With a vertical completion framework, this displays more information
+    (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+    :bind
+    (:map global-map
+          ("C-c r b" . org-roam-buffer-toggle)
+          ("C-c r c" . org-roam-capture)
+          ("C-c r i" . org-roam-node-insert)
+          ("C-c r g" . org-roam-graph)
+          ("C-c r j" . org-roam-dailies-capture-today)
+          ("C-c r f" . org-roam-node-find)))
+#+END_SRC
+
+** Org-ql
+Allows searching through tasks and org files in general.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package org-ql)
+
+  (use-package org-ql-search
+    :after org-ql
+    :straight (:type git
+               :host github
+               :repo "alphapapa/org-ql"
+               :files ("org-ql-search.el")))
+#+END_SRC

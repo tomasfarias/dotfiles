@@ -1,0 +1,498 @@
+# -*- mode: org; coding: utf-8; -*-
+#+ TITLE: Emacs: Base configuration
+#+ AUTHOR: Tomás Farías Santana
+
+This literate configuration provides settings and packages to apply UI/UX enhancements, theme configuration, and other miscellaneous settings.
+
+* Keybindings
+** Display keybindings
+Emacs has many, perhaps too many, keybindings. Thankfully, ~which-key.el~ helps by displaying them.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package which-key
+    :config (which-key-mode))
+#+END_SRC
+
+** Shorter yes/no
+I find typing y/n more natural after so long, but it may not be everyone's preference.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defalias 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+* Theme
+I manage my Emacs theme with ~doom-themes.el~. This is a bundle of a lot of themes, which sounds (and probably is) overkill. Ideally, I should choose a theme and stick to it. However, I frequently get the urge of changing the look of things, and having a bundle with a lot of themes ready to go lets me try out several each time.
+
+Keeping in mind that after swapping themes Emacs may need to be restarted anyways.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defconst current-theme 'doom-solarized-dark)
+
+  (use-package solaire-mode
+    ;; Darkens "support" buffers (those not opening a file) to help distinguish them
+    :init
+    (solaire-global-mode))
+
+  (use-package doom-themes
+    :config
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t
+          doom-themes-enable-italic t
+          doom-nord-brighter-comments t
+          doom-dracula-colorful-headers t
+          doom-dracula-brighter-comments t
+          doom-dracula-comment-bg nil
+          doom-solarized-dark-high-contrast-brighter-modeline nil
+          doom-solarized-dark-high-contrast-brighter-comments t
+          doom-solarized-dark-brighter-text t
+          doom-gruvbox-brighter-comments t
+          doom-gruvbox-dark-variant "hard")
+    (load-theme current-theme t)
+
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
+    ;; or for treemacs users
+    (setq doom-themes-treemacs-theme "doom-colors") ; use "doom-colors" for less minimal icon theme
+    (doom-themes-treemacs-config)
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
+#+END_SRC
+
+* Fonts
+Similar to themes, I like to try out different fonts. At the moment, I am sticking with [[https://github.com/be5invis/Iosevka][Iosevka]]. I set up both fixed and variable pitch, which the latter used mostly in  ~org-mode~ buffers.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun tomas/setup-font-faces ()
+    (setq-default line-spacing 1)
+    ;; Fixed and variable pitch
+    ;; See: https://www.gnu.org/software/emacs/manual/html_node/elisp/Low_002dLevel-Font.html
+    (set-face-attribute 'default nil :font (font-spec :family "Iosevka Fixed Slab" :size 17 :weight 'medium :width 'expanded :spacing 'm))
+    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "Iosevka Fixed Slab" :size 17 :weight 'medium :width 'expanded :spacing 'm))
+    (set-face-attribute 'variable-pitch nil :font (font-spec :family "Iosevka Etoile" :size 17 :weight 'medium :spacing 'p))
+
+    ;; Modeline
+    (set-face-attribute 'mode-line nil :font (font-spec :family "Iosevka Fixed Slab" :weight 'medium :size 17 :height 1 :width 'expanded :spacing 'm))
+    (set-face-attribute 'mode-line-active nil :font (font-spec :family "Iosevka Fixed Slab" :weight 'medium :size 17 :height 1 :width 'expanded :spacing 'm))
+    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Iosevka Fixed Slab" :weight 'medium :size 17 :height 1 :width 'expanded :spacing 'm))
+
+    ;; Org
+    (set-face-attribute 'org-agenda-structure nil :font (font-spec :family "Iosevka Etoile" :size 24 :weight 'medium :spacing 'p))
+    )
+  (tomas/setup-font-faces)
+  (add-hook 'after-init-hook 'tomas/setup-font-faces)
+  (add-hook 'server-after-make-frame-hook 'tomas/setup-font-faces)
+#+END_SRC
+
+* Mode line
+The mode line sits at the bottom of each internal window and displays important information about the current buffer, like the modes enabled, line count, file type, encoding, and can integrate with other modes to report summaries.
+
+** Line and column counts
+Display line and column counts in the mode line.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (line-number-mode 1)
+  (column-number-mode 1)
+  (global-display-line-numbers-mode)
+#+END_SRC
+
+** Install ~doom-modeline~
+A slick and minimalist mode line. Out of the box, it integrates with a lot of packages used by me, like ~magit.el~, ~eglot.el~, and ~projectile.el~. When running Emacs in a graphical display, ~doom-modeline.el~ can display icons to distinguish the major mode. These are provided by ~nerd-icons.el~, provided that the associated fonts are also installed in the system. If the fonts are not available, they may be installed with ~M-x nerd-icons-install-fonts~.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package nerd-icons
+    :if (display-graphic-p))
+
+  (use-package doom-modeline
+    :init
+    (doom-modeline-mode)
+
+    :config
+    (setq doom-modeline-height 40)
+    (setq doom-modeline-hud nil)
+    (setq doom-modeline-window-width-limit 100)
+    (setq doom-modeline-icon t)
+    ;; This scale-factor may need some tweaking according to your display
+    (setq nerd-icons-scale-factor 0.85)
+    (setq nerd-icons--default-adjust 0.0))
+#+END_SRC
+
+* Spell checking
+[[https://github.com/minad/jinx][Jinx]] is aware of different font faces, so it can be enabled globally to spell-check comments and docstrings. Moreover, it's pretty fast.
+
+Spell checking with [[https://github.com/minad/jinx][Jinx]] requires installing spell checkers, dictionaries, and Enchant. For Arch Linux, see instructions [[https://wiki.archlinux.org/title/Language_checking][here]].
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package jinx
+    :init
+    (global-jinx-mode)
+
+    :bind (("M-$" . jinx-correct)
+           ("C-M-$" . jinx-languages)))
+#+END_SRC
+
+* Undo and redo
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package undo-tree
+    :init
+    (global-undo-tree-mode)
+
+    :config
+    (global-set-key (kbd "C-z") 'undo)
+    (defalias 'redo 'undo-tree-redo)
+    (global-set-key (kbd "C-S-z") 'redo)
+    (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/.cache"))))
+#+END_SRC
+
+* Completion
+** Consult
+[[https://github.com/minad/consult][Consult]] provides search and navigation commands based on the Emacs completion function ~completing-read~. This makes it compatbile with other packages using the same API, like others on this list.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package consult
+    :init
+    ;; Optionally configure the register formatting. This improves the register
+    ;; preview for `consult-register', `consult-register-load',
+    ;; `consult-register-store' and the Emacs built-ins.
+    (setq register-preview-delay 0.5
+          register-preview-function #'consult-register-format)
+
+    ;; Optionally tweak the register preview window.
+    ;; This adds thin lines, sorting and hides the mode line of the window.
+    (advice-add #'register-preview :override #'consult-register-window)
+
+    ;; Use Consult to select xref locations with preview
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
+
+    :config
+    ;; Optionally configure preview. The default value
+    ;; is 'any, such that any key triggers the preview.
+    (setq consult-preview-key 'any)
+    ;; For some commands and buffer sources it is useful to configure the
+    ;; :preview-key on a per-command basis using the `consult-customize' macro.
+    (consult-customize
+     consult-theme :preview-key '(:debounce 0.2 any)
+     consult-ripgrep consult-git-grep consult-grep
+     consult-bookmark consult-recent-file consult-xref
+     consult--source-bookmark consult--source-file-register
+     consult--source-recent-file consult--source-project-recent-file
+     ;; :preview-key "M-."
+     :preview-key '(:debounce 0.4 any))
+
+    ;; Optionally configure the narrowing key.
+    ;; Both < and C-+ work reasonably well.
+    (setq consult-narrow-key "<") ;; "C-+"
+
+    ;; Optionally make narrowing help available in the minibuffer.
+    ;; You may want to use `embark-prefix-help-command' or which-key instead.
+    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+    ;; By default `consult-project-function' uses `project-root' from project.el.
+    ;; We configure projectile instead.
+    (autoload 'projectile-project-root "projectile")
+    (setq consult-project-function (lambda (_) (projectile-project-root)))
+
+    :hook
+    ;; Enable automatic preview at point in the *Completions* buffer. This is
+    ;; relevant when you use the default completion UI.
+    (completion-list-mode . consult-preview-at-point-mode)
+
+    :bind
+    (("C-x b" . consult-buffer)     ; orig. switch-to-buffer
+     ("M-y"   . consult-yank-pop)   ; orig. yank-pop
+     ;; Searching
+     ("M-s r" . consult-ripgrep)
+     ("M-s l" . consult-line)       ; Alternative: rebind C-s to use
+     ("M-s s" . consult-line)       ; consult-line instead of isearch, bind
+     ("M-s L" . consult-line-multi) ; isearch to M-s s
+     ("M-s o" . consult-outline)
+     ;; Isearch integration
+     :map isearch-mode-map
+     ("M-e" . consult-isearch-history)   ; orig. isearch-edit-string
+     ("M-s e" . consult-isearch-history) ; orig. isearch-edit-string
+     ("M-s l" . consult-line)            ; needed by consult-line to detect isearch
+     ("M-s L" . consult-line-multi)))      ; needed by consult-line to detect isearch
+#+END_SRC
+
+** Corfu
+[[https://github.com/minad/corfu][Corfu]] offers a completion pop-up for in-buffer completion. Notably, corfu does not include its own completion backend, but instead relies on ~completion-at-point-functions~ usually provided by major modes.
+#+BEGIN_SRC emacs-lisp :results output silent
+   (use-package corfu
+     :init
+     (global-corfu-mode)
+
+     :custom
+     (corfu-cycle t) ;; Enable cycling for `corfu-next/previous'
+     (corfu-auto t) ;; Enable auto completion
+     (corfu-auto-delay 1.2)
+     (corfu-separator ?\s) ;; Field separator to work with orderless
+     ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+     ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+     ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+     ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
+     ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+     ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+     :bind
+     (:map corfu-map
+           ("SPC" . corfu-insert-separator)
+           ("C-n" . corfu-next)
+           ("C-p" . corfu-previous)))
+
+   ;; A few more useful configurations...
+   (use-package emacs
+     :init
+     ;; TAB cycle if there are only few candidates.
+     ;; Otherwise Emacs will complete up to the longest common substring.
+     (setq completion-cycle-threshold 3)
+
+     ;; Enable indentation+completion using the TAB key.
+     ;; `completion-at-point' is often bound to M-TAB.
+     (setq tab-always-indent 'complete)
+
+     ;; Emacs 30 and newer: Disable Ispell completion function. As an alternative,
+     ;; try `cape-dict'.
+     (setq text-mode-ispell-word-completion nil)
+
+     ;; Emacs 28 and newer: Hide commands in M-x which do not apply to the current
+     ;; mode.  Corfu commands are hidden, since they are not used via M-x. This
+     ;; setting is useful beyond Corfu.
+     (setq read-extended-command-predicate #'command-completion-default-include-p))
+#+END_SRC
+
+*** Extensions
+**** Icons
+#+BEGIN_SRC emacs-lisp :results output silent
+(use-package kind-icon
+  :if (display-graphic-p)
+  :ensure t
+  :after corfu
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+#+END_SRC
+
+**** Corfu-terminal
+#+BEGIN_SRC emacs-lisp :results output silent
+(use-package corfu-terminal
+  :if (not (display-graphic-p))
+  :ensure t
+  :config
+  (corfu-terminal-mode))
+#+END_SRC
+
+**** Corfu-popupinfo
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package corfu-popupinfo
+    :straight (:type git
+               :host github
+               :repo "minad/corfu"
+               :files ("extensions/corfu-popupinfo.el"))
+
+    :after corfu
+    :hook (corfu-mode . corfu-popupinfo-mode)
+    :custom
+    (corfu-popupinfo-delay '(0.25 . 0.1))
+    (corfu-popupinfo-hide nil)
+    :config
+    (corfu-popupinfo-mode))
+#+END_SRC
+
+** Vertico
+Vertical completion with [[https://github.com/minad/vertico][vertico]] enables mini-buffer superpowers by making navigating between command options seemless.
+#+BEGIN_SRC emacs-lisp :results output silent
+    (use-package vertico
+      :init
+      (vertico-mode)
+
+      :config
+      (setq vertico-count 10) ;; number of options to display
+      (setq vertico-resize t)
+      (setq vertico-cycle t))
+#+END_SRC
+
+Vertico sorts by history position. With ~savehist~ we persist history over Emacs restarts.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package savehist
+    :init
+    (savehist-mode))
+#+END_SRC
+
+**** Extensions
+Add support for directories:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package vertico-directory
+    :after vertico
+
+    :straight (:type git
+               :host github
+               :repo "minad/vertico"
+               :files ("extensions/vertico-directory.el"))
+
+    ;; More convenient directory navigation commands
+    :bind (:map vertico-map
+                ("RET" . vertico-directory-enter)
+                ("DEL" . vertico-directory-delete-char)
+                ("M-DEL" . vertico-directory-delete-word))
+    ;; Tidy shadowed file names
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+#+END_SRC
+
+** Extensions
+*** Cape
+Cape, or Completion At Point Extensions, adds a set of completion functions that can be registered as ~completion-at-point-functions~.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package cape
+    ;; Bind dedicated completion commands
+    ;; Alternative prefix keys: C-c p, M-p, M-+, ...
+    :bind
+    (("M-TAB" . completion-at-point) ;; capf
+     ("M-p t" . complete-tag)        ;; etags
+     ("M-p d" . cape-dabbrev)        ;; or dabbrev-completion
+     ("M-p h" . cape-history)
+     ("M-p f" . cape-file)
+     ("M-p k" . cape-keyword)
+     ("M-p s" . cape-elisp-symbol)
+     ("M-p e" . cape-elisp-block)
+     ("M-p a" . cape-abbrev)
+     ("M-p l" . cape-line)
+     ("M-p w" . cape-dict)
+     ("M-p :" . cape-emoji)
+     ("M-p \\" . cape-tex)
+     ("M-p _" . cape-tex)
+     ("M-p ^" . cape-tex)
+     ("M-p &" . cape-sgml)
+     ("M-p r" . cape-rfc1345))
+
+    :init
+    ;; Add to the global default value of `completion-at-point-functions' which is
+    ;; used by `completion-at-point'.  The order of the functions matters, the
+    ;; first function returning a result wins.  Note that the list of buffer-local
+    ;; completion functions takes precedence over the global list.
+    (add-hook 'completion-at-point-functions #'cape-dabbrev)
+    (add-hook 'completion-at-point-functions #'cape-file)
+    (add-hook 'completion-at-point-functions #'cape-elisp-block)
+    (add-hook 'completion-at-point-functions #'cape-keyword))
+#+END_SRC
+
+*** Marginalia
+Extend completion options with rich annotations on each of the options displayed using [[https://github.com/minad/marginalia][marginalia]]. This greatly enhances each of the options displayed by vertico and consult.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package marginalia
+    :init
+    (marginalia-mode)
+
+    :bind (:map minibuffer-local-map
+                ("M-A" . marginalia-cycle)))
+#+END_SRC
+
+*** Orderless
+I find myself filtering by sub-strings that are not necessarily prefixes (especially when filtering directories). To allow this type of non-ordered filtering of completion options we use [[https://github.com/oantolin/orderless][orderless]].
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+#+END_SRC
+
+* Navigation
+Includes packages for jumping, searching, and in general moving around buffers and windows.
+
+** Ace window
+[[https://github.com/abo-abo/ace-window][Ace-window]] allows me to visually change windows as an alternative to ~C-x o~. Similar to avy, but for windows.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package ace-window
+    :config (global-set-key (kbd "M-o") 'ace-window))
+#+END_SRC
+
+** Avy
+[[https://github.com/abo-abo/avy][Avy]] allows for quickly jumping to a single character. This is very useful as a complement to search: We first search to filter down to a set of candidates, and then use avy to select the candidate we are looking for from the candidate pool. In a few words, if you can see it, avy jumps to it.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package avy
+    :config
+    ;; Decide how to position avy key relative to target.
+    ;; `'pre' means before the target, but it causes text to shift.
+    ;; Switch to `'at' to cover first character of target without shifting text.
+    (setq avy-style 'at)
+    (setq avy-timeout-seconds 0.7) ;; time to wait for `avy-goto-char-timer'
+
+    :bind
+    ;; First search, then toggle avy-isearch to jump to result
+    (("M-s y" . avy-goto-char-timer)
+     :map isearch-mode-map
+     ( "M-j" . avy-isearch)))
+#+END_SRC
+
+** Multiple cursors
+Manipulate multiple cursors at the same time for editing multiple lines simultaneously.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package multiple-cursors
+    :bind
+    (("C-c m e" . 'mc/edit-lines)
+     ("C->" . 'mc/mark-next-like-this)
+     ("C-<" . 'mc/mark-previous-like-this)
+     ("C-c M" . 'mc/mark-all-like-this)))
+#+END_SRC
+
+** Ripgrep
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package rg
+    :config (global-set-key (kbd "C-c s") #'rg-menu))
+#+END_SRC
+
+
+* Embark
+[[https://github.com/oantolin/embark][Embark]] provides what is essentially a contextual menu but with a command (~embark-act~) instead of mouse-2. Even better, embark can act both in a buffer and a mini-buffer.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package embark
+    :after (avy consult)
+
+    :bind
+    (("C-." . embark-act) ;; Acts as a prefix for a keymap of actions.
+     ("C-:" . embark-dwim)
+     ("C-h B" . embark-bindings))
+
+    :config
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                   nil
+                   (window-parameters (mode-line-format . none))))
+    :init
+    ;; Add the option to run embark when using avy
+    (defun tomas/avy-action-embark (pt)
+      (unwind-protect
+          (save-excursion
+            (goto-char pt)
+            (embark-act))
+        (select-window
+         (cdr (ring-ref avy-ring 0))))
+      t)
+
+    ;; After invoking avy-goto-char-timer, hit "." to run embark at the next
+    ;; candidate you select
+    (setf (alist-get ?. avy-dispatch-alist) 'tomas/avy-action-embark))
+
+  (use-package embark-consult
+    :after embark
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+#+END_SRC
+
+* Helpful
+Replace built-in Emacs help with Helpful, which provides contextual information like source code, key bindings, and links.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package helpful
+    :bind (:map global-map
+                ("C-h f" . helpful-callable)
+                ("C-h v" . helpful-variable)
+                ("C-h k" . helpful-key)
+                ("C-h x" . helpful-command)))
+#+END_SRC
+
+* Optional settings
+** Transparency
+Add some transparency to the Emacs frames. Adjust ~frame-alpha-background~ to desired value between 0 and 100.
+
+This requires native Wayland compilation available in Emacs >= 29.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (when (<= 29 emacs-major-version)
+    (set-frame-parameter nil 'alpha-background 100)
+    (add-to-list 'default-frame-alist '(alpha-background . 100)))
+#+END_SRC
+
+** Hide pointer
+Set to ~t~ to hide the pointer when typing starts. I find this helps with focus.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq make-pointer-invisible t)
+#+END_SRC

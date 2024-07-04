@@ -1,0 +1,28 @@
+#+ TITLE: Emacs: RSS configuration
+#+ AUTHOR: Tomás Farías Santana
+
+This literate configuration sets up [[https://github.com/skeeto/elfeed][Elfeed]], an Emacs RSS client. Note that this requires ~auth-sources~ to be setup, as some RSS feeds require authentication.
+
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package elfeed
+    :config (add-hook 'elfeed-new-entry-hook
+                      (elfeed-make-tagger :before "2 weeks ago"
+                                          :remove 'unread)))
+  (defun tomas/elfeed ()
+    "Start elfeed after setting elfeed-feeds."
+    (interactive)
+    (let* ((host "https://github.com/tomasfarias.private.atom")
+           ;; Fetches token from auth-sources and constructs feed URL.
+           (github-feed (format "%s?%s" host (funcall (plist-get (car (auth-source-search :host host)) :secret)))))
+      (setq elfeed-feeds
+            ;; We use backquote syntax to evaluate github-feed.
+            `(("https://news.ycombinator.com/rss" news)
+              ("https://www.404media.co/rss/" news)
+              (,github-feed monitoring)
+              ("https://hynek.me/index.xml" blog dev)
+              ("https://third-bit.com/atom.xml" blog dev)
+              ("http://threesixty360.wordpress.com/feed/" blog math))))
+    (elfeed))
+
+  (global-set-key (kbd "C-c t f") 'tomas/elfeed)
+#+END_SRC

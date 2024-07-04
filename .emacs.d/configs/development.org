@@ -1,0 +1,341 @@
+# -*- mode: org; coding: utf-8; -*-
+#+ TITLE: Emacs: Development configuration
+#+ AUTHOR: Tomás Farías Santana
+
+This literate configuration sets up Emacs as a fully-fledged IDE. Packages and settings will be customized to my current programming needs, so, for example, only major modes for programming languages I am currently working with will appear here.
+
+* Magit
+[[https://magit.vc/][Magit]] is a [[https://github.com/magit/transient][transient]]-powered [[https://www.git-scm.com/][git]] porcelain.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package magit
+    :config
+    ;; This will set the following keybinds:
+    ;; "C-x g" for `magit-status'
+    ;; "C-c g" for `magit-dispatch'
+    ;; "C-c f" for `magit-file-dispatch'
+    (setq magit-define-global-key-bindings 'recommended))
+
+  (use-package pinentry
+    :config
+    (setf epg-pinentry-mode 'loopback)
+    (pinentry-start))
+
+  (use-package magit-todos
+    :after (magit))
+
+  (use-package forge
+  :after magit)
+#+END_SRC
+
+* Eldoc
+Bundled with Emacs, this minor mode can display documentation of symbols at point.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq eldoc-print-after-edit nil) ;; Set to non-nil to show documentation only after some editing command.
+  (setq eldoc-echo-area-use-multiline-p 1) ;; The number of lines in the echo area Eldoc is allowed to use for documentation.
+  (setq eldoc-idle-delay 0.5)
+  (global-eldoc-mode 0)
+#+END_SRC
+
+* Project management
+[[https://github.com/bbatsov/projectile][Projectile]] allows navigating and managing projects. I setup automatic project discovery for anything in my development directory.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq shell-file-name "/usr/bin/zsh")
+
+  (use-package projectile
+    :diminish projectile-mode
+
+    :bind-keymap
+    ("C-c p" . projectile-command-map)
+
+    :config
+    (projectile-global-mode)
+    (setq projectile-project-search-path '(("~/src/github.com/" . 2))))
+#+END_SRC
+
+Also, integrate projectile with consult. I override some of the projectile keybindings to use their consult variants.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package consult-projectile
+    :bind (:map projectile-command-map
+                ("C-c p f" . consult-projectile-find-file)
+                ("C-c p 5 f" . consult-projectile-find-file-other-frame)
+                ("C-c p 4 f" . consult-projectile-find-file-other-window)
+                ("C-c p p" . consult-projectile-switch-project)
+                ("C-c p b" . consult-projectile-switch-to-buffer)
+                ("C-c p d" . consult-projectile-find-dir)
+                ("C-c p e" . consult-projectile-recentf)
+                ("C-c p 5 b" . consult-projectile-switch-to-buffer-other-frame)
+                ("C-c p 4 b" . consult-projectile-switch-to-buffer-other-window)))
+#+END_SRC
+
+* Treemacs
+[[https://github.com/Alexander-Miller/treemacs][Treemacs]] mode for file and project exploring.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package treemacs
+    :config
+    (progn
+      (treemacs-follow-mode t) ; Always move focus to current file
+      (treemacs-filewatch-mode t) ; Watch files being displayed for changes and automatically refresh
+      (treemacs-fringe-indicator-mode 'always)
+      (pcase (cons (not (null (executable-find "git")))
+                   (not (null treemacs-python-executable)))
+        (`(t . t)
+         (treemacs-git-mode 'deferred))
+        (`(t . _)
+         (treemacs-git-mode 'simple))))
+    :bind (:map global-map
+                ("<f8>" . treemacs)
+                ("<f9>" . treemacs-add-and-display-current-project-exclusively)
+                ("C-c t t" . treemacs)
+                ("C-c t c" . treemacs-collapse-project)
+                ("C-c t s" . treemacs-switch-workspace)
+                ("C-c t r" . treemacs-remove-workspace)
+                ("C-c t m" . treemacs-rename-workspace)
+                ("C-c t w r" . treemacs-remove-project-from-workspace)
+                ("C-c t w a" . treemacs-add-project-to-workspace)
+                ("C-c t a" . treemacs-add-project-to-workspace)))
+
+  (use-package treemacs-magit
+    :after (treemacs magit))
+
+  (use-package treemacs-projectile
+    :after (treemacs projectile))
+
+  (use-package treemacs-all-the-icons
+    :after (treemacs))
+
+  (use-package treemacs-icons-dired
+    :after (treemacs)
+    :hook (dired-mode . treemacs-icons-dired-enable-once))
+
+  (with-eval-after-load 'doom-themes
+    (doom-themes-treemacs-config))
+#+END_SRC
+
+* Formatting with Apheleia
+I use [[https://github.com/radian-software/apheleia][apheleia]] as it allows running multiple formatting tools in sequence. As a prerequisite, we have to enable ~direnv-mode~ as many of the tools are shimmed by direnv.
+#+BEGIN_SRC emacs-lisp :results output silent
+    (use-package direnv
+    :config
+    (direnv-mode))
+#+END_SRC
+
+For the setup, I use [[https://github.com/astral-sh/ruff][ruff]] for Python and the standard rustfmt for Rust:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package apheleia
+    :config
+    (setf apheleia-log-debug-info nil) ; turn on for debugging formatting tools
+    (apheleia-global-mode +1)
+    (setf (alist-get 'rufffmt apheleia-formatters)
+          '("ruff" "format" "--verbose" "--stdin-filename" filepath "-"))
+    (setf (alist-get 'rufflint apheleia-formatters)
+          ;; In case ruff cannot fix, then ignore and exit with 0
+          '("ruff" "--silent" "check" "--fix" "--exit-zero" "--stdin-filename" filepath "--extend-select" "I" "-"))
+    (setf (alist-get 'python-mode apheleia-mode-alist)
+          '(rufffmt rufflint))
+    (setf (alist-get 'python-ts-mode apheleia-mode-alist)
+          '(rufffmt rufflint))
+    (setf (alist-get 'rustfmt apheleia-formatters)
+          '("rustfmt" "--edition" "2021" "--quiet" "--emit" "stdout"))
+    (setf (alist-get 'rustic-mode apheleia-mode-alist)
+          '(rustfmt))
+    (setf (alist-get 'rustic-tsmode apheleia-mode-alist)
+          '(rustfmt)))
+#+END_SRC
+
+* LSP
+** LSP-mode
+I have tried both Eglot and lsp-mode and, currently, the latter is more feature complete and, as such, fits my workflow better. The biggest reason is ~lsp-ui~ which allows peeking at definitions and references, while keeping the current buffer's context.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package lsp-mode
+    :init
+    (setq lsp-keymap-prefix "C-c l")
+
+    :hook
+    ((python-ts-mode . lsp-deferred)
+     (python-mode . lsp-deferred)
+     (rustic-mode . lsp-deferred)
+     (typescript-mode . lsp-deferred)
+     (typescript-ts-mode . lsp-deferred)
+     (lsp-mode . lsp-enable-which-key-integration))
+
+    :commands
+    (lsp lsp-deferred))
+#+END_SRC
+
+However, most of ~lsp-ui~ features are quite noisy and distracting. In particular, anything in the sidelines is an immediate disable for me. The doc feature is nice to toggle, but not have it automatically enabled.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package lsp-ui
+
+    :config
+    ;; Anything in the sideline is too verbose and distracting
+    (setq lsp-ui-sideline-show-diagnostics nil)
+    (setq lsp-ui-sideline-show-hover nil)
+    (setq lsp-ui-sideline-show-code-actions nil)
+    ;; In contrast, peek is fantastic
+    ;; I despise moving away from my buffer when using xref
+    (setq lsp-ui-peek-enable t)
+    (setq lsp-ui-peek-show-directory t)
+    ;; Pulling up docs in the buffer is great, but only on command
+    (setq lsp-ui-doc-enable t)
+    (setq lsp-ui-doc-position 'at-point)
+    (setq lsp-ui-doc-show-with-cursor nil)
+    (setq lsp-ui-doc-show-with-mouse nil)
+
+    :bind (:map lsp-ui-mode-map
+                ("M-." . lsp-ui-peek-find-definitions)
+                ("M-?" . lsp-ui-peek-find-references)
+                ("C-c h" . lsp-ui-doc-show))
+
+    :commands lsp-ui-mode)
+#+END_SRC
+
+*** Extensions
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package lsp-treemacs :commands lsp-treemacs-errors-list)
+  (use-package lsp-pyright)
+  (use-package consult-lsp
+    :after (embark lsp-mode consult))
+#+END_SRC
+
+*** Performance
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq gc-cons-threshold 100000000)
+  (setq read-process-output-max (* 1024 1024)) ;; 1mb
+#+END_SRC
+
+* Programming
+Before going into language specific modes, we tell Emacs to prefer tree-sitter modes for all of them:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package emacs
+    :config
+    ;; You'll want to run the command `M-x treesit-install-language-grammar' before editing.
+    (setq major-mode-remap-alist
+          '((yaml-mode . yaml-ts-mode)
+            (bash-mode . bash-ts-mode)
+            (typescript-mode . typescript-ts-mode)
+            (json-mode . json-ts-mode)
+            (css-mode . css-ts-mode)
+            (python-mode . python-ts-mode))))
+#+END_SRC
+
+** Combobulate
+Structured editing and movement powered by tree-sitter.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package combobulate
+    :preface
+    (setq combobulate-key-prefix "C-c b")
+
+    :hook
+      ((python-ts-mode . combobulate-mode)
+       (js-ts-mode . combobulate-mode)
+       (html-ts-mode . combobulate-mode)
+       (css-ts-mode . combobulate-mode)
+       (yaml-ts-mode . combobulate-mode)
+       (typescript-ts-mode . combobulate-mode)
+       (json-ts-mode . combobulate-mode)
+       (rustic-mode . combobulate-mode)
+       (tsx-ts-mode . combobulate-mode)))
+#+END_SRC
+
+** Tree-sitter grammars
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq treesit-language-source-alist
+   '((javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+     (python "https://github.com/tree-sitter/tree-sitter-python" "v0.21.0")
+     (toml "https://github.com/tree-sitter/tree-sitter-toml")
+     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+     (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+#+END_SRC
+
+** File formats
+Major modes for some common file formats generally used for READMEs or configurations.
+
+*** Markdown
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package markdown-mode
+    :mode ("\\.md\\'" . gfm-mode)
+    :init (setq markdown-command "multimarkdown"))
+
+  (use-package poly-markdown
+    :config (add-to-list 'auto-mode-alist '("\\.md" . poly-markdown-mode)))
+#+END_SRC
+
+*** YAML
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package yaml-mode
+    :mode ("\\.yml\\'" . yaml-mode)
+    ("\\.yaml\\'" . yaml-mode))
+#+END_SRC
+
+*** JSON
+#+BEGIN_SRC emacs-lisp :results output silent
+(use-package json-mode)
+#+END_SRC
+
+** Python
+This just disables the very annoying documentation that pops-up in the minibuffer while typing. If I need documentation I can request it with ~C-c h~, otherwise it's very distracting having it pop-up while typing.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package python
+    :if (featurep 'lsp-mode)
+    :config
+    (setq lsp-eldoc-hook nil)           ;; doesn't seem to work
+    (fmakunbound 'lsp-signature-activate)
+    (defun lsp-signature-activate ()
+      (message nil)))
+#+END_SRC
+** Rust
+[[https://github.com/brotzeit/rustic?tab=readme-ov-file#intro][Rustic]] is built on top of [[https://github.com/rust-lang/rust-mode][rust-mode]] to extend with LSP integration.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package rustic
+    :config
+    (setq
+     rustic-lsp-client 'lsp-mode
+     ;; Let apheleia take care of format.
+     rustic-format-trigger 'nil))
+#+END_SRC
+
+** Terraform
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package terraform-mode
+    :mode
+    ("\\.tf" . terraform-mode)
+
+    :config
+    (setq terraform-indent-level 2)
+    (setq terraform-format-on-save t))
+#+END_SRC
+
+** Typescript
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package typescript-ts-mode
+    :mode ("\\.tsx?\\'")
+    :config
+    (setq typescript-ts-mode-indent-offset 4)
+    (setq typescript-mode-indent-offset 4))
+#+END_SRC
+
+* Terminal emulator: Eat
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package eat
+    :straight (:type git
+               :host codeberg
+               :repo "akib/emacs-eat"
+               :files ("*.el" ("term" "term/*.el") "*.texi"
+                       "*.ti" ("terminfo/e" "terminfo/e/*")
+                       ("terminfo/65" "terminfo/65/*")
+                       ("integration" "integration/*")
+                       (:exclude ".dir-locals.el" "*-tests.el")))
+
+    :hook
+    (eshell-load-hook . eat-eshell-mode) ;; Run Eat inside Eshell.
+    (eshell-load-hook . eat-eshell-visual-command-mode)) ;; Run visual commands with Eat instead of Term.
+#+END_SRC
+
+* Extensions
+** Rainbow delimiters
+Highlight brackets in different colors according to depth. The faces ~rainbow-delimiters-depth-N-face~ (where ~N~ is 1-9),
+~rainbow-delimiters-unmatched-face~ and ~rainbow-delimiters-unmatched-face~ can be customized to set the color.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package rainbow-delimiters)
+#+END_SRC
