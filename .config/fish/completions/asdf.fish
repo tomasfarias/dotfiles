@@ -1,0 +1,1 @@
+/home/tomasfarias/.asdf/completions/asdf.fish
