@@ -1,0 +1,22 @@
+# Looks
+background              = 001e26
+foreground              = 9bc1c2
+theme                   = Solarized Dark Higher Contrast
+window-decoration       = false
+mouse-hide-while-typing = true
+gtk-tabs-location       = top
+
+# Font
+font-size               = 14
+font-family             = Iosevka Fixed SS18 Medium Extended
+font-family-bold        = Iosevka Fixed SS18 Bold Extended
+font-family-italic      = Iosevka Fixed SS18 Italic Extended
+font-family-bold-italic = Iosevka Fixed SS18 Bold Extended Italic
+
+# Keybinds
+keybind = ctrl+shift+left_bracket=new_split:right
+keybind = ctrl+shift+right_bracket=new_split:left
+keybind = ctrl+right_bracket=goto_split:right
+keybind = ctrl+left_bracket=goto_split:left
+
+keybind = ctrl+w=close_surface
