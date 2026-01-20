@@ -23,7 +23,7 @@ I manage my Emacs theme with ~doom-themes.el~. This is a bundle of a lot of them
 
 Keeping in mind that after swapping themes Emacs may need to be restarted anyways.
 #+BEGIN_SRC emacs-lisp :results output silent
-  (defconst current-theme 'doom-solarized-dark)
+  (defconst current-theme 'doom-solarized-dark-high-contrast)
 
   (use-package solaire-mode
     ;; Darkens "support" buffers (those not opening a file) to help distinguish them
@@ -39,7 +39,7 @@ Keeping in mind that after swapping themes Emacs may need to be restarted anyway
           doom-dracula-colorful-headers t
           doom-dracula-brighter-comments t
           doom-dracula-comment-bg nil
-          doom-solarized-dark-high-contrast-brighter-modeline nil
+          doom-solarized-dark-high-contrast-brighter-modeline t
           doom-solarized-dark-high-contrast-brighter-comments t
           doom-solarized-dark-brighter-text t
           doom-gruvbox-brighter-comments t
@@ -53,6 +53,9 @@ Keeping in mind that after swapping themes Emacs may need to be restarted anyway
     (doom-themes-treemacs-config)
     ;; Corrects (and improves) org-mode's native fontification.
     (doom-themes-org-config))
+
+  (custom-set-faces
+  `(font-lock-string-face ((t (:foreground ,(doom-color 'cyan))))))
 #+END_SRC
 
 * Fonts
@@ -62,17 +65,17 @@ Similar to themes, I like to try out different fonts. At the moment, I am sticki
     (setq-default line-spacing 1)
     ;; Fixed and variable pitch
     ;; See: https://www.gnu.org/software/emacs/manual/html_node/elisp/Low_002dLevel-Font.html
-    (set-face-attribute 'default nil :font (font-spec :family "Iosevka Fixed Slab" :size 17 :weight 'medium :width 'expanded :spacing 'm))
-    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "Iosevka Fixed Slab" :size 17 :weight 'medium :width 'expanded :spacing 'm))
-    (set-face-attribute 'variable-pitch nil :font (font-spec :family "Iosevka Etoile" :size 17 :weight 'medium :spacing 'p))
+    (set-face-attribute 'default nil :font (font-spec :family "CommitMono" :size 17 :weight 'regular :width 'normal :spacing 'm))
+    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "CommitMono" :size 17 :weight 'regular :width 'normal :spacing 'm))
+    (set-face-attribute 'variable-pitch nil :font (font-spec :family "Atkinson Hyperlegible Next" :size 20 :weight 'regular :spacing 'p))
 
     ;; Modeline
-    (set-face-attribute 'mode-line nil :font (font-spec :family "Iosevka Fixed Slab" :weight 'medium :size 17 :height 1 :width 'expanded :spacing 'm))
-    (set-face-attribute 'mode-line-active nil :font (font-spec :family "Iosevka Fixed Slab" :weight 'medium :size 17 :height 1 :width 'expanded :spacing 'm))
-    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Iosevka Fixed Slab" :weight 'medium :size 17 :height 1 :width 'expanded :spacing 'm))
+    (set-face-attribute 'mode-line nil :font (font-spec :family "CommitMono" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
+    (set-face-attribute 'mode-line-active nil :font (font-spec :family "CommitMono" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
+    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "CommitMono" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
 
     ;; Org
-    (set-face-attribute 'org-agenda-structure nil :font (font-spec :family "Iosevka Etoile" :size 24 :weight 'medium :spacing 'p))
+    (set-face-attribute 'org-agenda-structure nil :font (font-spec :family "CommitMono" :size 24 :weight 'regular :spacing 'p))
     )
   (tomas/setup-font-faces)
   (add-hook 'after-init-hook 'tomas/setup-font-faces)
@@ -103,16 +106,57 @@ A slick and minimalist mode line. Out of the box, it integrates with a lot of pa
     :config
     (setq doom-modeline-height 40)
     (setq doom-modeline-hud nil)
-    (setq doom-modeline-window-width-limit 100)
+    (setq doom-modeline-window-width-limit 90)
     (setq doom-modeline-icon t)
     ;; This scale-factor may need some tweaking according to your display
     (setq nerd-icons-scale-factor 0.85)
     (setq nerd-icons--default-adjust 0.0))
 #+END_SRC
 
+* Dashboard
+Set dashboard buffer on startup.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package dashboard
+    :config
+    (dashboard-setup-startup-hook)
+    (setq initial-buffer-choice (lambda () (get-buffer-create dashboard-buffer-name)))
+    ;; Set the title
+    (setq dashboard-banner-logo-title "Emacs")
+    ;; Set the banner
+    (setq dashboard-startup-banner 'official)
+    ;; Value can be:
+    ;;  - 'official which displays the official emacs logo.
+    ;;  - 'logo which displays an alternative emacs logo.
+    ;;  - an integer which displays one of the text banners
+    ;;    (see dashboard-banners-directory files).
+    ;;  - a string that specifies a path for a custom banner
+    ;;    currently supported types are gif/image/text/xbm.
+    ;;  - a cons of 2 strings which specifies the path of an image to use
+    ;;    and other path of a text file to use if image isn't supported.
+    ;;    (cons "path/to/image/file/image.png" "path/to/text/file/text.txt").
+    ;;  - a list that can display an random banner,
+    ;;    supported values are: string (filepath), 'official, 'logo and integers.
+
+    ;; Content is not centered by default. To center, set
+    (setq dashboard-center-content t)
+    ;; vertically center content
+    (setq dashboard-vertically-center-content t)
+
+    ;; To disable shortcut "jump" indicators for each section, set
+    (setq dashboard-show-shortcuts t)
+    (setq dashboard-icon-type 'all-the-icons)  ; use `all-the-icons' package
+    (setq dashboard-display-icons-p t)
+    (setq dashboard-set-heading-icons t)
+    (setq dashboard-set-file-icons t)
+    (setq dashboard-navigation-cycle t)
+    (setq dashboard-projects-backend 'projectile)
+    (setq dashboard-items '((recents   . 10)
+                            (projects  . 10)
+                            (agenda    . 5)
+                            (bookmarks . 5))))
+#+END_SRC
 * Spell checking
 [[https://github.com/minad/jinx][Jinx]] is aware of different font faces, so it can be enabled globally to spell-check comments and docstrings. Moreover, it's pretty fast.
-
 Spell checking with [[https://github.com/minad/jinx][Jinx]] requires installing spell checkers, dictionaries, and Enchant. For Arch Linux, see instructions [[https://wiki.archlinux.org/title/Language_checking][here]].
 #+BEGIN_SRC emacs-lisp :results output silent
   (use-package jinx
@@ -191,11 +235,19 @@ Spell checking with [[https://github.com/minad/jinx][Jinx]] requires installing 
 
     :bind
     (("C-x b" . consult-buffer)     ; orig. switch-to-buffer
+     ("C-x 4 b" . consult-buffer-other-window)
+     ("C-x 5 b" . consult-buffer-other-frame)
+     ("C-x t b" . consult-buffer-other-tab)
+     ("C-x p b" . consult-project-buffer)
      ("M-y"   . consult-yank-pop)   ; orig. yank-pop
+     ;; Navigation
+     ("M-g g" . consult-goto-line)
+     ("M-g m" . consult-imenu)
      ;; Searching
      ("M-s r" . consult-ripgrep)
-     ("M-s l" . consult-line)       ; Alternative: rebind C-s to use
-     ("M-s s" . consult-line)       ; consult-line instead of isearch, bind
+     ("M-s f" . consult-fd)
+     ("C-s" . consult-line)       ; Alternative: rebind C-s to use
+     ("M-s s" . isearch-forward)       ; consult-line instead of isearch, bind
      ("M-s L" . consult-line-multi) ; isearch to M-s s
      ("M-s o" . consult-outline)
      ;; Isearch integration
@@ -326,6 +378,16 @@ Add support for directories:
                 ("M-DEL" . vertico-directory-delete-word))
     ;; Tidy shadowed file names
     :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+#+END_SRC
+
+Use the posframe to display vertico:
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package vertico-posframe
+    :custom (vertico-multiform-commands
+      '((consult-line (:not posframe))
+        (consult-imenu (:not postframe))
+        (consult-ripgrep (:not postframe))
+        (t posframe))))
 #+END_SRC
 
 ** Extensions
@@ -469,6 +531,103 @@ Manipulate multiple cursors at the same time for editing multiple lines simultan
     (embark-collect-mode . consult-preview-at-point-mode))
 #+END_SRC
 
+* Meow
+#+BEGIN_SRC emacs-lisp :results output silent
+  (defun tomas/meow-setup ()
+    (interactive)
+    (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
+    (setq meow-keypad-leader-dispatch "C-c")
+     (meow-motion-overwrite-define-key
+     '("j" . meow-next)
+     '("k" . meow-prev)
+     '("<escape>" . ignore))
+    (meow-leader-define-key
+     ;; SPC j/k will run the original command in MOTION state.
+     '("j" . "H-j")
+     '("k" . "H-k")
+     '("p" . projectile-command-map)
+     '("l" . lsp-command-map)
+     '("b" . combobulate)
+     ;; Use SPC (0-9) for digit arguments.
+     '("1" . meow-digit-argument)
+     '("2" . meow-digit-argument)
+     '("3" . meow-digit-argument)
+     '("4" . meow-digit-argument)
+     '("5" . meow-digit-argument)
+     '("6" . meow-digit-argument)
+     '("7" . meow-digit-argument)
+     '("8" . meow-digit-argument)
+     '("9" . meow-digit-argument)
+     '("0" . meow-digit-argument)
+     '("/" . meow-keypad-describe-key)
+     '("?" . meow-cheatsheet))
+    (meow-normal-define-key
+     '("0" . meow-expand-0)
+     '("9" . meow-expand-9)
+     '("8" . meow-expand-8)
+     '("7" . meow-expand-7)
+     '("6" . meow-expand-6)
+     '("5" . meow-expand-5)
+     '("4" . meow-expand-4)
+     '("3" . meow-expand-3)
+     '("2" . meow-expand-2)
+     '("1" . meow-expand-1)
+     '("-" . negative-argument)
+     '(";" . meow-reverse)
+     '("," . meow-inner-of-thing)
+     '("." . meow-bounds-of-thing)
+     '("[" . meow-beginning-of-thing)
+     '("]" . meow-end-of-thing)
+     '("a" . meow-append)
+     '("A" . meow-open-below)
+     '("b" . meow-back-word)
+     '("B" . meow-back-symbol)
+     '("c" . meow-change)
+     '("d" . meow-delete)
+     '("D" . meow-backward-delete)
+     '("e" . meow-next-word)
+     '("E" . meow-next-symbol)
+     '("f" . meow-find)
+     '("g" . meow-cancel-selection)
+     '("G" . meow-grab)
+     '("h" . meow-left)
+     '("H" . meow-left-expand)
+     '("i" . meow-insert)
+     '("I" . meow-open-above)
+     '("j" . meow-next)
+     '("J" . meow-next-expand)
+     '("k" . meow-prev)
+     '("K" . meow-prev-expand)
+     '("l" . meow-right)
+     '("L" . meow-right-expand)
+     '("m" . meow-join)
+     '("n" . meow-search)
+     '("o" . meow-block)
+     '("O" . meow-to-block)
+     '("p" . meow-yank)
+     '("q" . meow-quit)
+     '("Q" . meow-goto-line)
+     '("r" . meow-replace)
+     '("R" . meow-swap-grab)
+     '("s" . meow-kill)
+     '("t" . meow-till)
+     '("u" . meow-undo)
+     '("U" . meow-undo-in-selection)
+     '("v" . meow-visit)
+     '("w" . meow-mark-word)
+     '("W" . meow-mark-symbol)
+     '("x" . meow-line)
+     '("X" . meow-goto-line)
+     '("y" . meow-save)
+     '("Y" . meow-sync-grab)
+     '("z" . meow-pop-selection)
+     '("'" . repeat)
+     '("<escape>" . ignore)))
+
+   (use-package meow
+      :config (tomas/meow-setup))
+#+END_SRC
+
 * Helpful
 Replace built-in Emacs help with Helpful, which provides contextual information like source code, key bindings, and links.
 #+BEGIN_SRC emacs-lisp :results output silent
@@ -495,4 +654,10 @@ This requires native Wayland compilation available in Emacs >= 29.
 Set to ~t~ to hide the pointer when typing starts. I find this helps with focus.
 #+BEGIN_SRC emacs-lisp :results output silent
   (setq make-pointer-invisible t)
+#+END_SRC
+
+** Enable auto-revert mode
+For when a buffer's underlying file changes, automatically reload the buffer. File changes happen frequently with version control when, e.g., changing branches.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq auto-revert-mode t)
 #+END_SRC

@@ -331,6 +331,59 @@ And the configuration for org-roam:
           ("C-c r j" . org-roam-dailies-capture-today)
           ("C-c r f" . org-roam-node-find)))
 #+END_SRC
+** Citar
+#+BEGIN_SRC emacs-lisp :results output silent
+  (setq bibtex-completion-bibliography (list (concat org-directory "bibliography/references.bib"))
+        bibtex-completion-library-path (concat org-directory "bibliography/pdfs")
+        bibtex-completion-notes-path (concat org-directory "notes")
+        bibtex-completion-pdf-field "File"
+        org-bibtex-file (list (concat org-directory "bibliography/references.bib"))
+        bibtex-completion-notes-template-multiple-files ":PROPERTIES:\n:ID: ${id}\n:Custom_ID: ${=key=}\n:AUTHOR: ${author-or-editor}\n:ROAM_REFS: ${citekey}\n:BTYPE: \n:YEAR: ${year}\n:END:\n#+TITLE: ${title}\n#+AUTHOR: ${author}\n#+FILETAGS: ${keywords}\n#+DATE: %U\n#+STARTUP: inlineimages\n#+STARTUP: latexpreview\n")
+
+  (setq bibtex-completion-display-formats
+        '((article       . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${journal:40}")
+          (inbook        . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*}")
+          (incollection  . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
+          (inproceedings . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*} ${booktitle:40}")
+          (t             . "${=has-pdf=:1}${=has-note=:1} ${=type=:4} ${year:4} ${author:36} ${title:*}")))
+
+  (setq bibtex-completion-pdf-open-function 'find-file)
+
+  (use-package org-ref
+    :after org-roam)
+
+  (use-package org-roam-bibtex
+    :after org-roam
+    :config
+    (setq orb-preformat-templates t
+          orb-preformat-keywords
+          '("=key=" "title" "url" "doi" "author-or-editor" "keywords" "year" "citekey" "fullcite")
+          org-roam-bibtex-preformat-keywords
+          '("=key=" "title" "url" "doi" "author-or-editor" "keywords" "year" "citekey" "fullcite")))
+
+  (use-package bibtex
+    :custom
+    (bibtex-user-optional-fields '(("keywords" "Keywords to describe the entry" "")
+                                      ("file" "Link to document file." ":")))
+    (bibtex-align-at-equal-sign t)
+    (bibtex-dialect 'biblatex)
+  )
+
+  (use-package citar
+    :custom
+    (org-cite-global-bibliography '("/home/tomasfarias/src/github.com/tomasfarias/org/bibliography/references.bib"))
+    (org-cite-insert-processor 'citar)
+    (org-cite-follow-processor 'citar)
+    (org-cite-activate-processor 'citar)
+    (bibtex-set-dialect citar--insert-bibtex)
+    (citar-bibliography org-cite-global-bibliography)
+    ;; optional: org-cite-insert is also bound to C-c C-x C-@
+    :bind
+    (:map org-mode-map :package org ("C-c o b" . #'org-cite-insert)))
+
+  (use-package citar-embark
+    :config (citar-embark-mode))
+  #+END_SRC
 
 ** Org-ql
 Allows searching through tasks and org files in general.
@@ -437,4 +490,12 @@ The variable ~tomas/org-agenda-frame-name~ can be customized to use a different 
     (advice-add 'org-agenda :after #'delete-other-windows)
 
     (org-agenda nil command))
+#+END_SRC
+
+** Ox-hugo
+Function to spawn an Emacs frame and call ~org-agenda~ in it. This is useful for running ~org-agenda~ from anywhere by calling the function with ~emacsclient -ce '(tomas/org-agenda-frame "A")' -F '((name . "***Agenda***"))'~.
+
+The variable ~tomas/org-agenda-frame-name~ can be customized to use a different frame name for the dedicated ~org-agenda~ frame, but this must always match the name set via the ~-F~ flag to ensure the frame is properly cleaned-up.
+#+BEGIN_SRC emacs-lisp :results output silent
+  (use-package ox-hugo)
 #+END_SRC
