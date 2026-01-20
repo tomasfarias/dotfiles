@@ -1,0 +1,9 @@
+tabbar {
+    margin: 0px;
+}
+
+tabbar tabbox {
+    margin: 0px;
+    padding: 0px;
+    background-color: #002b36;
+}

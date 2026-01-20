@@ -5,6 +5,7 @@ theme                   = Solarized Dark Higher Contrast
 window-decoration       = false
 mouse-hide-while-typing = true
 gtk-tabs-location       = top
+gtk-custom-css          = ./ghostty.css
 
 # Font
 font-size               = 14
