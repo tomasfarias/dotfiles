@@ -1,3 +1,5 @@
+.mise.*.toml
+mise.*.toml
 .python-version
 .tool-versions
 pyrightconfig.json
