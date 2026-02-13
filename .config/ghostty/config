@@ -9,10 +9,7 @@ gtk-custom-css          = ./ghostty.css
 
 # Font
 font-size               = 14
-font-family             = Iosevka Fixed SS18 Medium Extended
-font-family-bold        = Iosevka Fixed SS18 Bold Extended
-font-family-italic      = Iosevka Fixed SS18 Italic Extended
-font-family-bold-italic = Iosevka Fixed SS18 Bold Extended Italic
+font-family             = Maple Mono
 
 # Keybinds
 keybind = ctrl+shift+left_bracket=new_split:right

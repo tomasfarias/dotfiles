@@ -65,17 +65,17 @@ Similar to themes, I like to try out different fonts. At the moment, I am sticki
     (setq-default line-spacing 1)
     ;; Fixed and variable pitch
     ;; See: https://www.gnu.org/software/emacs/manual/html_node/elisp/Low_002dLevel-Font.html
-    (set-face-attribute 'default nil :font (font-spec :family "CommitMono" :size 17 :weight 'regular :width 'normal :spacing 'm))
-    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "CommitMono" :size 17 :weight 'regular :width 'normal :spacing 'm))
+    (set-face-attribute 'default nil :font (font-spec :family "Maple Mono NF" :size 17 :weight 'regular :width 'normal :spacing 'm))
+    (set-face-attribute 'fixed-pitch nil :font (font-spec :family "Maple Mono NF" :size 17 :weight 'regular :width 'normal :spacing 'm))
     (set-face-attribute 'variable-pitch nil :font (font-spec :family "Atkinson Hyperlegible Next" :size 20 :weight 'regular :spacing 'p))
 
     ;; Modeline
-    (set-face-attribute 'mode-line nil :font (font-spec :family "CommitMono" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
-    (set-face-attribute 'mode-line-active nil :font (font-spec :family "CommitMono" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
-    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "CommitMono" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
+    (set-face-attribute 'mode-line nil :font (font-spec :family "Maple Mono NF" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
+    (set-face-attribute 'mode-line-active nil :font (font-spec :family "Maple Mono NF" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
+    (set-face-attribute 'mode-line-inactive nil :font (font-spec :family "Maple Mono NF" :weight 'regular :size 18 :height 1 :width 'normal :spacing 'm))
 
     ;; Org
-    (set-face-attribute 'org-agenda-structure nil :font (font-spec :family "CommitMono" :size 24 :weight 'regular :spacing 'p))
+    (set-face-attribute 'org-agenda-structure nil :font (font-spec :family "Maple Mono NF" :size 24 :weight 'regular :spacing 'p))
     )
   (tomas/setup-font-faces)
   (add-hook 'after-init-hook 'tomas/setup-font-faces)
