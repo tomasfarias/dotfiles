@@ -13,7 +13,7 @@ set -g fish_greeting
 set EDITOR "emacsclient -nw -a \"emacs -nw\""
 set GIT_EDITOR "emacsclient -nw -a \"emacs -nw\""
 set GPG_TTY $(tty)
-set TERM xterm-24bit
+set TERM xterm-ghostty
 set LC_ALL en_US.UTF-8
 set LANG en_US.UTF-8
 set LANGUAGE en_US.UTF-8

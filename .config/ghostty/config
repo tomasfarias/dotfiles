@@ -19,5 +19,7 @@ keybind = ctrl+shift+left_bracket=new_split:right
 keybind = ctrl+shift+right_bracket=new_split:left
 keybind = ctrl+right_bracket=goto_split:right
 keybind = ctrl+left_bracket=goto_split:left
-
 keybind = ctrl+w=close_surface
+
+# Copy Ghostty's terminfo when SSH'ing to a new server, fallback to setting xterm-256color if copy fails.
+shell-integration-features = ssh-terminfo,ssh-env
