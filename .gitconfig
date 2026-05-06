@@ -1,10 +1,30 @@
 [user]
 	email = tomas@tomasfarias.dev
 	name = Tomás Farías Santana
-	signingkey = 1C1B69EFD234D24B5600D0A777942905FCDABBD3
+	signingkey = ~/.ssh/id_tomasfarias.pub
 [commit]
 	gpgsign = true
 [init]
-	defaultBranch = master
+	defaultBranch = main
 [core]
-	excludesFile = ~/.gitignore
+	excludesFile = $XDG_CONFIG_HOME/git/ignore
+        pager = delta
+[url "https://"]
+	insteadOf = git://
+[github]
+	user = tomasfarias
+[gpg "ssh"]
+	allowedSignersFile = ~/.ssh/allowed_signers
+[fetch]
+	prune = true
+[gpg]
+	format = ssh
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or light = true, or omit for auto-detection
+    side-by-side = true
+[merge]
+    conflictStyle = zdiff3
