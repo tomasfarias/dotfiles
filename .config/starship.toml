@@ -7,3 +7,10 @@ time_format = "%H:%M"
 disabled = false
 show_always = true
 style_user = "bold blue"
+
+[character]
+success_symbol = '[\$](bold green) '
+error_symbol = '[\$](bold red) '
+
+[git_branch]
+truncation_length = 24
